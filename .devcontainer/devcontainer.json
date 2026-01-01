@@ -8,18 +8,19 @@
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
   "mounts": [
-    "source=${localEnv:HOME}/.claude,target=/root/.claude,type=bind,consistency=cached",
-    "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,readonly"
+    "source=${localEnv:HOME}/.claude.json,target=/root/.claude.json,type=bind",
+    "source=${localEnv:HOME}/.claude,target=/root/.claude,type=bind",
+    "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,readonly",
+    "source=${localEnv:HOME}/.config/gcloud,target=/root/.config/gcloud,type=bind"
   ],
   "customizations": {
     "vscode": {
       "extensions": [
-        "gleam.gleam"
+        "gleam.gleam",
+        "hashicorp.terraform"
       ]
     }
   },
-  "forwardPorts": [
-    8080
-  ],
-  "postCreateCommand": "[ -f gleam.toml ] && gleam deps download || true"
+  "forwardPorts": [8080],
+  "postCreateCommand": "find /root/.claude -xtype l -delete 2>/dev/null || true; [ -f gleam.toml ] && gleam deps download || true"
 }
