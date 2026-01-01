@@ -67,3 +67,39 @@ envoy.get("PORT")           // Result(String, Nil)
 - mist HTTPサーバーはデフォルトで`127.0.0.1`にバインド
 - Docker対応には`mist.bind("0.0.0.0")`が必要
 - ビルダーとランタイムのErlangバージョンを一致させること
+
+## 開発ワークフロー
+
+### ローカル開発
+
+```sh
+make up    # ビルド＆起動（Docker Compose）
+make down  # 停止
+make logs  # ログ表示
+```
+
+### 本番デプロイ
+
+GitHub Actionsで自動実行（mainブランチへのpush時）、または手動で`workflow_dispatch`
+
+```sh
+make deploy  # amd64環境でのみ実行可能
+make plan    # Terraform plan確認
+```
+
+### IaC構成
+
+| ファイル | 役割 |
+|---------|------|
+| `compose.yaml` | ローカル開発 |
+| `docker-bake.hcl` | 本番ビルド定義 |
+| `Makefile` | コマンド統一 |
+| `.github/workflows/deploy.yml` | CI/CD |
+| `terraform/` | GCPインフラ定義 |
+
+### アーキテクチャ制約
+
+- devcontainer: ARM (aarch64)
+- Cloud Run: AMD64 (x86_64)
+- ErlangはQEMUエミュレーション非対応 → ローカルからamd64ビルド不可
+- 本番デプロイはGitHub Actions（amd64ネイティブ）で実行

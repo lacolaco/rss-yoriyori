@@ -42,7 +42,7 @@ resource "google_cloud_run_v2_service" "main" {
 
   template {
     containers {
-      image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.service_name}/${var.service_name}:latest"
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.service_name}/${var.service_name}:${var.image_tag}"
 
       ports {
         container_port = 8080
@@ -51,7 +51,7 @@ resource "google_cloud_run_v2_service" "main" {
       resources {
         limits = {
           cpu    = "1"
-          memory = "256Mi"
+          memory = "512Mi"
         }
       }
 

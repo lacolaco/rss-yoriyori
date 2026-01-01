@@ -14,3 +14,9 @@ variable "service_name" {
   type        = string
   default     = "rss-yoriyori"
 }
+
+variable "image_tag" {
+  description = "Docker image tag to deploy"
+  type        = string
+  default     = "latest"
+}
