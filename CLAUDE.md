@@ -46,6 +46,28 @@ Tests are located in `test/` and use the gleeunit testing framework. Test functi
 - `const`: モジュールトップレベル、コンパイル時定数（リテラルのみ）
 - `let`: 関数内、実行時束縛（再代入不可、イミュータブル）
 
+### パイプ演算子 `|>`
+
+左辺の結果を右辺の関数の**第1引数**に渡す：
+
+```gleam
+// これは
+wisp.ok()
+|> wisp.set_header("content-type", "application/rss+xml")
+|> wisp.string_body(rss_xml)
+
+// これと同じ
+wisp.string_body(
+  wisp.set_header(wisp.ok(), "content-type", "application/rss+xml"),
+  rss_xml
+)
+```
+
+制約：
+- 右辺は必ず関数呼び出し（括弧必須）: `|> func()` ○ / `|> func` ✗
+- 第1引数の型が一致しないとコンパイルエラー
+- 引数0個の関数にはパイプできない
+
 ### Result型のチェーン
 
 ```gleam
@@ -61,6 +83,33 @@ envoy.get("PORT")           // Result(String, Nil)
 
 - gleeunitは`test/`ディレクトリのみ検索（ハードコード）
 - `src/`内のテストを使いたい場合は`test/`から再エクスポート、またはGlacierを使用
+
+### wispハンドラーのテスト
+
+`wisp/simulate`モジュールを使用：
+
+```gleam
+import gleam/http
+import wisp/simulate
+import router
+
+pub fn my_endpoint_test() {
+  // リクエスト作成
+  let request = simulate.request(http.Post, "/path")
+
+  // ハンドラー呼び出し
+  let response = router.handle_request(request)
+
+  // アサーション
+  assert response.status == 200
+  let body = simulate.read_body(response)
+  assert string.contains(body, "expected")
+}
+```
+
+- `simulate.request(method, path)`: テスト用リクエスト生成
+- `simulate.read_body(response)`: レスポンスボディを文字列で取得
+- `simulate.string_body(content)`: リクエストにボディを設定
 
 ## Docker
 

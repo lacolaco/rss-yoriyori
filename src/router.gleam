@@ -9,7 +9,7 @@
 
 // gleam/http から HTTP メソッドの型をインポート
 // Get, Post などはバリアント（列挙型の値）
-import gleam/http.{Get}
+import gleam/http.{Get, Post}
 import wisp.{type Request, type Response}
 
 // ----------------------------------------------------------------------------
@@ -33,8 +33,13 @@ pub fn handle_request(req: Request) -> Response {
     Get, ["health"] -> health()
 
     // パターン: /health に GET 以外のメソッドでアクセス
-    // wisp.method_not_allowed は許可メソッドを Allow ヘッダーに含めて 405 を返す
     _, ["health"] -> wisp.method_not_allowed([Get])
+
+    // パターン: POST /aggregate
+    Post, ["aggregate"] -> aggregate()
+
+    // パターン: /aggregate に POST 以外のメソッドでアクセス
+    _, ["aggregate"] -> wisp.method_not_allowed([Post])
 
     // パターン: それ以外のすべてのパス（_ はワイルドカード）
     _, _ -> wisp.not_found()
@@ -50,8 +55,26 @@ pub fn handle_request(req: Request) -> Response {
 /// Cloud Run はこのエンドポイントを定期的に呼び出して
 /// サービスが正常に動作しているか確認する
 fn health() -> Response {
-  // wisp.ok() は HTTP 200 OK レスポンスを生成
-  // wisp.string_body() でレスポンスボディを設定
   wisp.ok()
   |> wisp.string_body("OK")
+}
+
+/// POST /aggregate - RSSフィード集約エンドポイント
+///
+/// 複数のRSSフィードを取得し、1つの統合フィードとして返す
+/// 現在はダミーのRSS XMLを返す（スタブ実装）
+fn aggregate() -> Response {
+  let rss_xml =
+    "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<rss version=\"2.0\">
+  <channel>
+    <title>RSS Yoriyori</title>
+    <description>Aggregated RSS Feed</description>
+    <link>https://example.com</link>
+  </channel>
+</rss>"
+
+  wisp.ok()
+  |> wisp.set_header("content-type", "application/rss+xml")
+  |> wisp.string_body(rss_xml)
 }
