@@ -112,6 +112,40 @@ result.try(Ok(5), fn(x) { Ok(x * 2) })  // Ok(10)
 result.try(Ok(5), fn(x) { Error("oops") })  // Error("oops")
 ```
 
+### let assert（リファータブル・パターンマッチ）
+
+パターンマッチが失敗したらクラッシュする構文：
+
+```gleam
+// 通常の let - 必ず成功するパターンのみ
+let x = 5  // OK
+let Ok(x) = result  // コンパイルエラー
+
+// let assert - 失敗したらクラッシュ
+let assert Ok(date) = birl.parse("2025-01-01T12:00:00Z")
+```
+
+テストで「この値は絶対Okのはず」という前提を表明するのに便利。
+
+### Option型と日時
+
+Gleam標準ライブラリに日時型はない。`birl`パッケージを使用：
+
+```gleam
+import birl
+import gleam/option.{type Option, Some, None}
+
+// 現在時刻
+let now = birl.now()
+
+// パース
+let assert Ok(time) = birl.parse("2025-01-01T12:00:00Z")
+
+// Option型
+let maybe_date: Option(birl.Time) = Some(now)
+let no_date: Option(birl.Time) = None
+```
+
 ### テストのコロケーション
 
 - gleeunitは`test/`ディレクトリのみ検索（ハードコード）
