@@ -78,6 +78,39 @@ envoy.get("PORT")           // Result(String, Nil)
 
 - `result.try`: Okの場合のみ次の関数を適用（旧名: `result.then`は非推奨）
 - `result.unwrap`: デフォルト値付きで値を取り出す
+- `result.replace_error`: エラー型を変換
+
+### useキーワード（継続渡しの構文糖衣）
+
+`use`は「コールバック地獄」を解消する構文糖衣：
+
+```gleam
+// use なし（ネストが深くなる）
+result.try(envoy.get("S3_ENDPOINT"), fn(endpoint) {
+  result.try(envoy.get("S3_ACCESS_KEY"), fn(access_key) {
+    Ok(Config(endpoint, access_key))
+  })
+})
+
+// use あり（フラットに書ける）
+use endpoint <- result.try(envoy.get("S3_ENDPOINT"))
+use access_key <- result.try(envoy.get("S3_ACCESS_KEY"))
+Ok(Config(endpoint, access_key))
+```
+
+- `use x <- f(...)` は `f(..., fn(x) { 残りのコード })` と等価
+- Rustの`?`演算子やHaskellの`do`記法に相当
+
+### result.try vs result.map
+
+```gleam
+// result.map: 失敗しない変換処理
+result.map(Ok(5), fn(x) { x * 2 })  // Ok(10)
+
+// result.try: 失敗する可能性がある変換処理
+result.try(Ok(5), fn(x) { Ok(x * 2) })  // Ok(10)
+result.try(Ok(5), fn(x) { Error("oops") })  // Error("oops")
+```
 
 ### テストのコロケーション
 
@@ -152,3 +185,35 @@ make plan    # Terraform plan確認
 - Cloud Run: AMD64 (x86_64)
 - ErlangはQEMUエミュレーション非対応 → ローカルからamd64ビルド不可
 - 本番デプロイはGitHub Actions（amd64ネイティブ）で実行
+
+## ストレージ連携
+
+S3互換APIを使用してMinIO（ローカル）とGCS（本番）の両方に対応：
+
+```gleam
+import storage/s3
+
+// 環境変数から設定を読み込み
+let assert Ok(config) = s3.config_from_env()
+
+// ファイルアップロード
+s3.put_object(config, "path/to/file.xml", content, "application/xml")
+```
+
+### 環境変数
+
+| 変数名 | 説明 | 例 |
+|--------|------|-----|
+| `S3_ENDPOINT` | エンドポイント | `storage.googleapis.com` |
+| `S3_ACCESS_KEY` | アクセスキー | - |
+| `S3_SECRET_KEY` | シークレットキー | - |
+| `S3_BUCKET` | バケット名 | `project-rss-yoriyori-rss` |
+| `S3_USE_SSL` | SSL使用 | `true` / `false` |
+
+### ローカル開発（MinIO）
+
+```sh
+make test  # MinIO起動 + テスト実行（Docker Compose経由）
+```
+
+Docker Compose内でテスト実行することで、`minio:9000`で簡単にアクセス可能。

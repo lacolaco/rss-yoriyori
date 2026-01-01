@@ -7,9 +7,6 @@
 .git/
 .claude
 
-# テスト（本番イメージには不要）
-/test
-
 # ドキュメント
 *.md
 !README.md

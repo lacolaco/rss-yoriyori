@@ -1,4 +1,4 @@
-.PHONY: up down logs deploy init plan apply
+.PHONY: up down logs test deploy init plan apply
 
 PROJECT_ID := rss-yoriyori
 TAG := $(shell git rev-parse --short HEAD)
@@ -12,6 +12,9 @@ down:
 
 logs:
 	docker compose logs -f
+
+test:
+	docker compose run --rm --build test
 
 # 本番デプロイ（GitHub Actions amd64環境で実行）
 deploy:
