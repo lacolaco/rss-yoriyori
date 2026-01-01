@@ -59,3 +59,13 @@ pub fn get_attribute(attrs: List(xmlm.Attribute), name: String) -> Result(String
     }
   })
 }
+
+/// XML特殊文字をエスケープ
+pub fn escape(s: String) -> String {
+  s
+  |> string.replace("&", "&amp;")
+  |> string.replace("<", "&lt;")
+  |> string.replace(">", "&gt;")
+  |> string.replace("\"", "&quot;")
+  |> string.replace("'", "&apos;")
+}
