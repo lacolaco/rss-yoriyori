@@ -11,8 +11,12 @@
     "source=${localEnv:HOME}/.claude.json,target=/root/.claude.json,type=bind",
     "source=${localEnv:HOME}/.claude,target=/root/.claude,type=bind",
     "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,readonly",
-    "source=${localEnv:HOME}/.config/gcloud,target=/root/.config/gcloud,type=bind"
+    "source=${localEnv:HOME}/.config/gcloud,target=/root/.config/gcloud,type=bind",
+    "source=rss-yoriyori-bashhistory,target=/commandhistory,type=volume"
   ],
+  "containerEnv": {
+    "HISTFILE": "/commandhistory/.bash_history"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
