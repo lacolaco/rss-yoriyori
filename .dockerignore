@@ -1,0 +1,22 @@
+# ビルド成果物（Dockerイメージ内で再生成する）
+/build
+
+# 開発環境
+.devcontainer/
+.github/
+.git/
+.claude
+
+# テスト（本番イメージには不要）
+/test
+
+# ドキュメント
+*.md
+!README.md
+
+# IDE設定
+.vscode/
+*.local.*
+
+# Terraform（別途管理）
+/terraform

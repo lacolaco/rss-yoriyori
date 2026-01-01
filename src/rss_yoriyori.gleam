@@ -41,11 +41,10 @@ pub fn main() -> Nil {
 
   // 環境変数 PORT を読み取る
   // envoy.get は Result(String, Nil) を返す
-  // result.unwrap はエラー時にデフォルト値を返す
+  // result.try は Ok の場合のみ次の関数を適用し、Error はそのまま伝播
   let port =
     envoy.get("PORT")
-    |> result.unwrap(int.to_string(default_port))
-    |> int.parse
+    |> result.try(int.parse)
     |> result.unwrap(default_port)
 
   // wisp用のシークレットキー生成（セッション等に使用）
@@ -57,9 +56,11 @@ pub fn main() -> Nil {
 
   // HTTPサーバーを起動
   // |> はパイプ演算子：左の結果を右の関数の第一引数に渡す
+  // mist.bind("0.0.0.0") で全インターフェースでリッスン（Docker対応）
   let assert Ok(_) =
     wisp_mist.handler(handler, secret_key_base)
     |> mist.new
+    |> mist.bind("0.0.0.0")
     |> mist.port(port)
     |> mist.start
 
