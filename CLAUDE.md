@@ -11,11 +11,18 @@ rss_yoriyori is a Gleam library/application. Gleam is a type-safe functional pro
 ```sh
 gleam build      # Compile the project
 gleam run        # Run the project
-gleam test       # Run all tests
+make test        # テスト実行（必須：Docker Compose経由）
 gleam docs build # Generate documentation
 ```
 
 ## Testing
+
+**重要: テストは必ず `make test` で実行すること。`gleam test` は使わない。**
+
+理由：
+- storage_testはMinIOが必要
+- Docker Compose経由で実行することで、MinIOが自動起動する
+- `gleam test` では環境変数がなく、storage_testが失敗する
 
 Tests are located in `test/` and use the gleeunit testing framework. Test functions must end with `_test` suffix to be discovered and run.
 
@@ -144,6 +151,31 @@ let assert Ok(time) = birl.parse("2025-01-01T12:00:00Z")
 // Option型
 let maybe_date: Option(birl.Time) = Some(now)
 let no_date: Option(birl.Time) = None
+```
+
+### カスタム型（代数的データ型）
+
+`type`で独自の型を定義。enumとstructの区別はない：
+
+```gleam
+// enum的（複数バリアント）
+pub type ParseError {
+  InvalidXml(String)
+  UnsupportedFormat(String)
+}
+
+// struct的（単一バリアント）
+pub type FeedItem {
+  FeedItem(
+    title: String,
+    link: String,
+    pub_date: Option(Time),
+  )
+}
+
+// 使用
+let item = FeedItem(title: "Hello", link: "https://...", pub_date: None)
+item.title  // "Hello"
 ```
 
 ### テストのコロケーション
