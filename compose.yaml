@@ -11,8 +11,8 @@ services:
       - S3_BUCKET=rss-yoriyori
       - S3_USE_SSL=false
     depends_on:
-      minio:
-        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
 
   minio:
     image: minio/minio:latest
