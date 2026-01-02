@@ -18,6 +18,7 @@ fn test_config() -> config.Config {
       link: "https://example.com",
       output_file: "feed.xml",
       max_items: 100,
+      max_items_per_feed: 10,
       feed_urls: [],
     ),
     storage: s3.StorageConfig(
@@ -103,6 +104,7 @@ pub fn feed_xml_returns_content_when_file_exists_test() {
         link: "https://example.com",
         output_file: "test/serve_feed.xml",
         max_items: 100,
+        max_items_per_feed: 10,
         feed_urls: [],
       ),
       storage: storage_config,
@@ -137,6 +139,7 @@ pub fn feed_xml_returns_404_when_file_not_exists_test() {
         link: "https://example.com",
         output_file: "test/nonexistent_feed_12345.xml",
         max_items: 100,
+        max_items_per_feed: 10,
         feed_urls: [],
       ),
       storage: storage_config,
