@@ -39,7 +39,12 @@ pub fn run(config: Config) -> Result(String, AggregateError) {
 
   // フィードを統合
   let merged =
-    merge_feeds(feeds, feed_config.title, feed_config.link, feed_config.max_items)
+    merge_feeds(
+      feeds,
+      feed_config.title,
+      feed_config.link,
+      feed_config.max_items,
+    )
 
   // RSS XMLを生成
   let rss_xml = generator.to_rss(merged)
@@ -59,7 +64,10 @@ fn fetch_and_parse(url: String) -> Result(Feed, AggregateError) {
   use body <- result.try(fetch_url(url))
   case parser.parse(body) {
     Ok(feed) -> Ok(feed)
-    Error(e) -> Error(ParseError("Failed to parse " <> url <> ": " <> parse_error_to_string(e)))
+    Error(e) ->
+      Error(ParseError(
+        "Failed to parse " <> url <> ": " <> parse_error_to_string(e),
+      ))
   }
 }
 
@@ -72,7 +80,8 @@ fn fetch_url(url: String) -> Result(String, AggregateError) {
         Ok(response) ->
           case response.status {
             200 -> Ok(response.body)
-            status -> Error(FetchError("HTTP " <> string.inspect(status) <> ": " <> url))
+            status ->
+              Error(FetchError("HTTP " <> string.inspect(status) <> ": " <> url))
           }
         Error(_) -> Error(FetchError("Connection failed: " <> url))
       }
@@ -86,7 +95,9 @@ fn upload_to_storage(
   output_file: String,
   content: String,
 ) -> Result(Nil, AggregateError) {
-  case s3.put_object(storage_config, output_file, content, "application/rss+xml") {
+  case
+    s3.put_object(storage_config, output_file, content, "application/rss+xml")
+  {
     Ok(_) -> Ok(Nil)
     Error(e) -> Error(StorageError(storage_error_to_string(e)))
   }

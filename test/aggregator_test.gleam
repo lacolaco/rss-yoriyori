@@ -12,7 +12,8 @@ import gleam/string
 // ----------------------------------------------------------------------------
 
 pub fn merge_empty_feeds_test() {
-  let result = aggregator.merge_feeds([], "Combined", "https://example.com", 100)
+  let result =
+    aggregator.merge_feeds([], "Combined", "https://example.com", 100)
 
   assert result.title == "Combined"
   assert result.link == "https://example.com"
@@ -36,7 +37,8 @@ pub fn merge_single_feed_test() {
       items: [item],
     )
 
-  let result = aggregator.merge_feeds([feed], "Combined", "https://example.com", 100)
+  let result =
+    aggregator.merge_feeds([feed], "Combined", "https://example.com", 100)
 
   assert result.title == "Combined"
   assert list.length(result.items) == 1
@@ -65,23 +67,22 @@ pub fn merge_multiple_feeds_test() {
     )
 
   let feed_a =
-    Feed(
-      title: "Feed A",
-      link: "https://a.com",
-      description: None,
-      items: [item_a],
-    )
+    Feed(title: "Feed A", link: "https://a.com", description: None, items: [
+      item_a,
+    ])
 
   let feed_b =
-    Feed(
-      title: "Feed B",
-      link: "https://b.com",
-      description: None,
-      items: [item_b],
-    )
+    Feed(title: "Feed B", link: "https://b.com", description: None, items: [
+      item_b,
+    ])
 
   let result =
-    aggregator.merge_feeds([feed_a, feed_b], "Combined", "https://example.com", 100)
+    aggregator.merge_feeds(
+      [feed_a, feed_b],
+      "Combined",
+      "https://example.com",
+      100,
+    )
 
   assert list.length(result.items) == 2
 }
@@ -107,7 +108,8 @@ pub fn merge_feeds_limits_to_100_test() {
       items: items,
     )
 
-  let result = aggregator.merge_feeds([feed], "Combined", "https://example.com", 100)
+  let result =
+    aggregator.merge_feeds([feed], "Combined", "https://example.com", 100)
 
   assert list.length(result.items) == 100
 }
@@ -134,14 +136,13 @@ pub fn merge_feeds_sorts_by_date_desc_test() {
 
   // 古い順で渡す
   let feed =
-    Feed(
-      title: "Feed",
-      link: "https://a.com",
-      description: None,
-      items: [old_item, new_item],
-    )
+    Feed(title: "Feed", link: "https://a.com", description: None, items: [
+      old_item,
+      new_item,
+    ])
 
-  let result = aggregator.merge_feeds([feed], "Combined", "https://example.com", 100)
+  let result =
+    aggregator.merge_feeds([feed], "Combined", "https://example.com", 100)
 
   let assert [first, second] = result.items
   // 新しい記事が先に来るはず

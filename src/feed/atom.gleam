@@ -11,7 +11,8 @@ import gleam/result
 pub fn parse(children: List(XmlNode)) -> Feed {
   let title = xml.get_text_content(children, "title") |> result.unwrap("")
   let link = get_link(children) |> result.unwrap("")
-  let description = None  // Atomにはdescriptionがない
+  let description = None
+  // Atomにはdescriptionがない
 
   let items =
     children
@@ -23,12 +24,7 @@ pub fn parse(children: List(XmlNode)) -> Feed {
       }
     })
 
-  Feed(
-    title: title,
-    link: link,
-    description: description,
-    items: items,
-  )
+  Feed(title: title, link: link, description: description, items: items)
 }
 
 /// Atom entryをパース
@@ -45,7 +41,12 @@ fn parse_entry(children: List(XmlNode)) -> FeedItem {
     |> result.try(date.parse_iso8601)
     |> option.from_result
 
-  FeedItem(title: title, link: link, description: description, pub_date: pub_date)
+  FeedItem(
+    title: title,
+    link: link,
+    description: description,
+    pub_date: pub_date,
+  )
 }
 
 /// Atomのlink要素からhref属性を取得

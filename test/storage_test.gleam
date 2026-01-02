@@ -43,7 +43,8 @@ pub fn put_object_uploads_xml_test() {
   let assert Ok(config) = s3.config_from_env()
 
   let xml = "<?xml version=\"1.0\"?><rss><channel></channel></rss>"
-  let result = s3.put_object(config, "test/feed.xml", xml, "application/rss+xml")
+  let result =
+    s3.put_object(config, "test/feed.xml", xml, "application/rss+xml")
 
   assert result == Ok(Nil)
 }

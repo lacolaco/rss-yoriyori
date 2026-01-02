@@ -26,7 +26,10 @@ pub fn find_element(children: List(XmlNode), name: String) -> Option(XmlNode) {
 }
 
 /// 指定名の要素のテキスト内容を取得
-pub fn get_text_content(children: List(XmlNode), name: String) -> Result(String, Nil) {
+pub fn get_text_content(
+  children: List(XmlNode),
+  name: String,
+) -> Result(String, Nil) {
   case find_element(children, name) {
     option.Some(Element(_, element_children)) -> {
       let text =
@@ -50,7 +53,10 @@ pub fn get_text_content(children: List(XmlNode), name: String) -> Result(String,
 }
 
 /// 属性リストから指定名の属性値を取得
-pub fn get_attribute(attrs: List(xmlm.Attribute), name: String) -> Result(String, Nil) {
+pub fn get_attribute(
+  attrs: List(xmlm.Attribute),
+  name: String,
+) -> Result(String, Nil) {
   attrs
   |> list.find_map(fn(attr) {
     case attr {

@@ -93,11 +93,7 @@ pub fn put_object(
 
   // リクエストを構築
   let req =
-    put_object.request(
-      bucket: config.bucket_name,
-      key: key,
-      body: body_bits,
-    )
+    put_object.request(bucket: config.bucket_name, key: key, body: body_bits)
     |> put_object.build(creds)
 
   // Content-Type ヘッダーを追加
@@ -109,7 +105,9 @@ pub fn put_object(
       case response.status {
         200 -> Ok(Nil)
         status ->
-          Error(UploadError("Upload failed with status: " <> int.to_string(status)))
+          Error(UploadError(
+            "Upload failed with status: " <> int.to_string(status),
+          ))
       }
     Error(_) -> Error(ConnectionError("Failed to connect to storage"))
   }

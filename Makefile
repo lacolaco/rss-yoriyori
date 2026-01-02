@@ -1,4 +1,4 @@
-.PHONY: up down logs test deploy init plan apply
+.PHONY: up down logs test format format-check build deploy init plan apply
 
 PROJECT_ID := rss-yoriyori
 TAG := $(shell git rev-parse --short HEAD)
@@ -15,6 +15,15 @@ logs:
 
 test:
 	docker compose run --rm --build test
+
+format:
+	gleam format src test
+
+format-check:
+	gleam format --check src test
+
+build:
+	gleam build
 
 # 本番デプロイ（GitHub Actions amd64環境で実行）
 deploy:
