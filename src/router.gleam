@@ -30,7 +30,7 @@ fn serve_feed(config: Config) -> Response {
   case s3.get_object(config.storage, config.feed.output_file) {
     Ok(content) ->
       wisp.ok()
-      |> wisp.set_header("content-type", "application/rss+xml; charset=utf-8")
+      |> wisp.set_header("content-type", "application/xml; charset=utf-8")
       |> wisp.set_header("cache-control", "public, max-age=300")
       |> wisp.string_body(content)
     Error(s3.NotFoundError) -> wisp.not_found()
@@ -43,7 +43,7 @@ fn aggregate(config: Config) -> Response {
   case aggregator.run(config) {
     Ok(rss_xml) ->
       wisp.ok()
-      |> wisp.set_header("content-type", "application/rss+xml")
+      |> wisp.set_header("content-type", "application/xml; charset=utf-8")
       |> wisp.string_body(rss_xml)
     Error(e) ->
       wisp.internal_server_error()
