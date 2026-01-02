@@ -28,10 +28,26 @@ Tests are located in `test/` and use the gleeunit testing framework. Test functi
 
 ## Project Structure
 
-- `src/` - Source files (`.gleam`)
-- `test/` - Test files (`.gleam`)
-- `gleam.toml` - Project configuration and dependencies
-- `manifest.toml` - Locked dependency versions (auto-generated)
+```
+├── src/                  # ソースコード
+│   ├── rss_yoriyori.gleam  # エントリーポイント
+│   ├── router.gleam        # HTTPルーティング
+│   ├── config.gleam        # 設定読み込み
+│   ├── feed/               # フィード処理
+│   │   ├── parser.gleam    # RSS/Atomパーサー
+│   │   ├── aggregator.gleam # フィード集約
+│   │   ├── generator.gleam # RSS生成
+│   │   └── types.gleam     # 型定義
+│   └── storage/
+│       └── s3.gleam        # S3互換ストレージ
+├── test/                 # テストコード
+├── terraform/            # GCPインフラ定義
+├── docs/                 # ドキュメント
+├── gleam.toml            # プロジェクト設定
+├── feeds.json            # フィード設定（Git管理）
+├── compose.yaml          # ローカル開発用
+└── Dockerfile            # 本番ビルド
+```
 
 ## Gleam Language Notes
 
@@ -42,11 +58,9 @@ Tests are located in `test/` and use the gleeunit testing framework. Test functi
 
 ### 命名規則
 
-| 対象 | スタイル | 例 |
-|------|----------|-----|
-| 変数・関数 | `snake_case` | `default_port`, `handle_request` |
-| 型 | `PascalCase` | `Result`, `FeedItem` |
-| モジュール | `snake_case` | `gleam/int`, `router` |
+- 変数・関数: `snake_case`（例: `default_port`, `handle_request`）
+- 型: `PascalCase`（例: `Result`, `FeedItem`）
+- モジュール: `snake_case`（例: `gleam/int`, `router`）
 
 ### let vs const
 
@@ -228,22 +242,27 @@ make logs  # ログ表示
 
 ### 本番デプロイ
 
-GitHub Actionsで自動実行（mainブランチへのpush時）、または手動で`workflow_dispatch`
+mainブランチへのPR作成時にデプロイワークフローが起動。production環境の承認後に実行される。
 
 ```sh
-make deploy  # amd64環境でのみ実行可能
-make plan    # Terraform plan確認
+make plan    # Terraform plan確認（ローカル）
 ```
 
 ### IaC構成
 
-| ファイル | 役割 |
-|---------|------|
-| `compose.yaml` | ローカル開発 |
-| `docker-bake.hcl` | 本番ビルド定義 |
-| `Makefile` | コマンド統一 |
-| `.github/workflows/deploy.yml` | CI/CD |
-| `terraform/` | GCPインフラ定義 |
+- `compose.yaml` - ローカル開発
+- `docker-bake.hcl` - 本番ビルド定義
+- `Makefile` - コマンド統一
+- `.github/workflows/test.yml` - CI（テスト、lint、terraform plan）
+- `.github/workflows/deploy.yml` - CD（承認後デプロイ）
+- `terraform/` - GCPインフラ定義
+
+### CI/CDフロー
+
+1. PRを作成 → test.yml（テスト、lint、terraform plan）
+2. CIパス → deploy.yml起動（production環境の承認待ち）
+3. 承認 → Docker build & push → terraform apply
+4. デプロイ完了 → PRマージ可能
 
 ### アーキテクチャ制約
 
@@ -264,17 +283,22 @@ let assert Ok(config) = s3.config_from_env()
 
 // ファイルアップロード
 s3.put_object(config, "path/to/file.xml", content, "application/xml")
+
+// ファイル取得
+case s3.get_object(config, "path/to/file.xml") {
+  Ok(content) -> // ...
+  Error(s3.NotFoundError) -> // 404
+  Error(_) -> // その他エラー
+}
 ```
 
 ### 環境変数
 
-| 変数名 | 説明 | 例 |
-|--------|------|-----|
-| `S3_ENDPOINT` | エンドポイント | `storage.googleapis.com` |
-| `S3_ACCESS_KEY` | アクセスキー | - |
-| `S3_SECRET_KEY` | シークレットキー | - |
-| `S3_BUCKET` | バケット名 | `project-rss-yoriyori-rss` |
-| `S3_USE_SSL` | SSL使用 | `true` / `false` |
+- `S3_ENDPOINT` - エンドポイント（例: `storage.googleapis.com`）
+- `S3_ACCESS_KEY` - アクセスキー
+- `S3_SECRET_KEY` - シークレットキー
+- `S3_BUCKET` - バケット名
+- `S3_USE_SSL` - SSL使用（`true` / `false`）
 
 ### ローカル開発（MinIO）
 
@@ -315,3 +339,15 @@ json.parse(content, decoder)
 - `{ }` はブロック式（最後の式の値を返す）
 - `use`で継続渡しをフラットに書ける
 - `decode.success(value)`で最終値を返す
+
+## HTTPエンドポイント
+
+- `GET /health` - ヘルスチェック
+- `GET /feed.xml` - 集約済みフィード配信（ストレージから取得）
+- `POST /aggregate` - フィード取得・統合・保存
+
+## 本番環境
+
+- Cloud Run: `https://rss-yoriyori-hpos2m2qia-an.a.run.app`
+- カスタムドメイン: `https://rss-yoriyori.lacolaco.dev`
+- Scheduler: 毎時0分に `/aggregate` 実行
