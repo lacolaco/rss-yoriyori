@@ -283,3 +283,35 @@ make test  # MinIO起動 + テスト実行（Docker Compose経由）
 ```
 
 Docker Compose内でテスト実行することで、`minio:9000`で簡単にアクセス可能。
+
+## フィード設定
+
+フィードURLや出力設定は`feeds.json`でGit管理：
+
+```json
+{
+  "title": "RSS Yoriyori",
+  "link": "https://example.com",
+  "output_file": "feed.xml",
+  "max_items": 100,
+  "feeds": [
+    "https://example.com/feed.xml"
+  ]
+}
+```
+
+### JSONデコーダー（ブロック式 + use）
+
+```gleam
+let decoder = {
+  use title <- decode.field("title", decode.string)
+  use max_items <- decode.field("max_items", decode.int)
+  decode.success(Config(title: title, max_items: max_items))
+}
+
+json.parse(content, decoder)
+```
+
+- `{ }` はブロック式（最後の式の値を返す）
+- `use`で継続渡しをフラットに書ける
+- `decode.success(value)`で最終値を返す

@@ -13,4 +13,7 @@ RUN gleam deps download
 COPY src/ src/
 COPY test/ test/
 
+# フィード設定ファイルをコピー
+COPY feeds.json ./
+
 ENTRYPOINT ["gleam", "test"]

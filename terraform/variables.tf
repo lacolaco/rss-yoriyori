@@ -20,3 +20,9 @@ variable "image_tag" {
   type        = string
   default     = "latest"
 }
+
+variable "scheduler_cron" {
+  description = "Cron schedule for feed aggregation (Cloud Scheduler)"
+  type        = string
+  default     = "0 * * * *" # 毎時0分
+}

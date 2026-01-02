@@ -25,6 +25,11 @@ resource "google_project_service" "artifactregistry" {
   disable_on_destroy = false
 }
 
+resource "google_project_service" "cloudscheduler" {
+  service            = "cloudscheduler.googleapis.com"
+  disable_on_destroy = false
+}
+
 # Artifact Registry - Dockerイメージ保存用
 resource "google_artifact_registry_repository" "main" {
   location      = var.region
@@ -159,4 +164,46 @@ resource "google_storage_bucket_iam_member" "storage_admin" {
 # HMAC キー（S3互換APIアクセス用）
 resource "google_storage_hmac_key" "storage" {
   service_account_email = google_service_account.storage.email
+}
+
+# ----------------------------------------------------------------------------
+# Cloud Scheduler（定期実行）
+# ----------------------------------------------------------------------------
+
+# Scheduler用サービスアカウント
+resource "google_service_account" "scheduler" {
+  account_id   = "${var.service_name}-scheduler"
+  display_name = "Scheduler for ${var.service_name}"
+}
+
+# SchedulerにCloud Run起動権限を付与
+resource "google_cloud_run_v2_service_iam_member" "scheduler_invoker" {
+  name     = google_cloud_run_v2_service.main.name
+  location = google_cloud_run_v2_service.main.location
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.scheduler.email}"
+}
+
+# Cloud Schedulerジョブ
+resource "google_cloud_scheduler_job" "aggregate" {
+  name        = "${var.service_name}-aggregate"
+  description = "Trigger feed aggregation"
+  schedule    = var.scheduler_cron
+  time_zone   = "Asia/Tokyo"
+  region      = var.region
+
+  http_target {
+    http_method = "POST"
+    uri         = "${google_cloud_run_v2_service.main.uri}/aggregate"
+
+    oidc_token {
+      service_account_email = google_service_account.scheduler.email
+    }
+  }
+
+  retry_config {
+    retry_count = 3
+  }
+
+  depends_on = [google_project_service.cloudscheduler]
 }

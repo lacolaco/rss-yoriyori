@@ -46,6 +46,9 @@ WORKDIR /app
 # erlang-shipment は build/erlang-shipment/ に出力される
 COPY --from=builder /app/build/erlang-shipment ./
 
+# フィード設定ファイルをコピー
+COPY feeds.json ./
+
 # 所有権を変更
 RUN chown -R app:app /app
 
