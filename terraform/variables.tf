@@ -32,3 +32,9 @@ variable "github_repo" {
   type        = string
   default     = "lacolaco/rss-yoriyori"
 }
+
+variable "custom_domain" {
+  description = "Custom domain for the Cloud Run service"
+  type        = string
+  default     = "rss-yoriyori.lacolaco.dev"
+}

@@ -74,6 +74,81 @@ pub fn aggregate_rejects_get_test() {
 }
 
 // ----------------------------------------------------------------------------
+// GET /feed.xml
+// ----------------------------------------------------------------------------
+
+pub fn feed_xml_rejects_post_test() {
+  let request = simulate.request(http.Post, "/feed.xml")
+  let response = router.handle_request(request, test_config())
+
+  assert response.status == 405
+}
+
+pub fn feed_xml_returns_error_when_storage_unavailable_test() {
+  // test_config()のストレージ設定は無効なため、500か404が返る
+  let request = simulate.request(http.Get, "/feed.xml")
+  let response = router.handle_request(request, test_config())
+
+  // ストレージ接続失敗で500
+  assert response.status == 500
+}
+
+pub fn feed_xml_returns_content_when_file_exists_test() {
+  // MinIO統合テスト（Docker Compose環境で実行）
+  let assert Ok(storage_config) = s3.config_from_env()
+  let config =
+    config.Config(
+      feed: config.FeedConfig(
+        title: "Test Feed",
+        link: "https://example.com",
+        output_file: "test/serve_feed.xml",
+        max_items: 100,
+        feed_urls: [],
+      ),
+      storage: storage_config,
+    )
+
+  // まずファイルをアップロード
+  let xml_content =
+    "<?xml version=\"1.0\"?><rss><channel><title>Test</title></channel></rss>"
+  let assert Ok(Nil) =
+    s3.put_object(
+      storage_config,
+      "test/serve_feed.xml",
+      xml_content,
+      "application/rss+xml",
+    )
+
+  // /feed.xmlにアクセス
+  let request = simulate.request(http.Get, "/feed.xml")
+  let response = router.handle_request(request, config)
+
+  assert response.status == 200
+  assert simulate.read_body(response) == xml_content
+}
+
+pub fn feed_xml_returns_404_when_file_not_exists_test() {
+  // MinIO統合テスト（Docker Compose環境で実行）
+  let assert Ok(storage_config) = s3.config_from_env()
+  let config =
+    config.Config(
+      feed: config.FeedConfig(
+        title: "Test Feed",
+        link: "https://example.com",
+        output_file: "test/nonexistent_feed_12345.xml",
+        max_items: 100,
+        feed_urls: [],
+      ),
+      storage: storage_config,
+    )
+
+  let request = simulate.request(http.Get, "/feed.xml")
+  let response = router.handle_request(request, config)
+
+  assert response.status == 404
+}
+
+// ----------------------------------------------------------------------------
 // 404
 // ----------------------------------------------------------------------------
 

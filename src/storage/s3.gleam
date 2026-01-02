@@ -11,6 +11,7 @@
 // - S3_USE_SSL: SSL使用有無（"true"/"false"、デフォルト: false）
 
 import bucket
+import bucket/get_object
 import bucket/put_object
 import envoy
 import gleam/bit_array
@@ -37,6 +38,7 @@ pub type StorageConfig {
 pub type StorageError {
   ConnectionError(String)
   UploadError(String)
+  NotFoundError
 }
 
 /// 環境変数から設定を読み込む
@@ -108,6 +110,37 @@ pub fn put_object(
           Error(UploadError(
             "Upload failed with status: " <> int.to_string(status),
           ))
+      }
+    Error(_) -> Error(ConnectionError("Failed to connect to storage"))
+  }
+}
+
+/// ファイルを取得
+pub fn get_object(
+  config: StorageConfig,
+  key: String,
+) -> Result(String, StorageError) {
+  let creds =
+    bucket.credentials(config.endpoint, config.access_key, config.secret_key)
+    |> bucket.with_scheme(case config.use_ssl {
+      True -> http.Https
+      False -> http.Http
+    })
+
+  let req =
+    get_object.request(bucket: config.bucket_name, key: key)
+    |> get_object.build(creds)
+
+  case httpc.send_bits(req) {
+    Ok(response) ->
+      case get_object.response(response) {
+        Ok(get_object.Found(body)) ->
+          case bit_array.to_string(body) {
+            Ok(content) -> Ok(content)
+            Error(_) -> Error(ConnectionError("Invalid UTF-8 response"))
+          }
+        Ok(get_object.NotFound) -> Error(NotFoundError)
+        Error(_) -> Error(ConnectionError("Unexpected response from storage"))
       }
     Error(_) -> Error(ConnectionError("Failed to connect to storage"))
   }

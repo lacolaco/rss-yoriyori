@@ -131,7 +131,7 @@ resource "google_project_service" "storage" {
 
 # RSS出力用バケット
 resource "google_storage_bucket" "rss" {
-  name          = "${var.project_id}-${var.service_name}-rss"
+  name          = "${var.project_id}-rss"
   location      = var.region
   force_destroy = false
 
@@ -159,6 +159,13 @@ resource "google_storage_bucket_iam_member" "storage_admin" {
   bucket = google_storage_bucket.rss.name
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.storage.email}"
+}
+
+# 公開読み取りアクセス
+resource "google_storage_bucket_iam_member" "public_read" {
+  bucket = google_storage_bucket.rss.name
+  role   = "roles/storage.objectViewer"
+  member = "allUsers"
 }
 
 # HMAC キー（S3互換APIアクセス用）

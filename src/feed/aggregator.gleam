@@ -116,6 +116,7 @@ fn storage_error_to_string(e: s3.StorageError) -> String {
   case e {
     s3.ConnectionError(msg) -> "Connection error: " <> msg
     s3.UploadError(msg) -> "Upload error: " <> msg
+    s3.NotFoundError -> "Object not found"
   }
 }
 

@@ -48,3 +48,27 @@ pub fn put_object_uploads_xml_test() {
 
   assert result == Ok(Nil)
 }
+
+// ----------------------------------------------------------------------------
+// get_object テスト（統合テスト - MinIO必須）
+// ----------------------------------------------------------------------------
+
+pub fn get_object_retrieves_uploaded_content_test() {
+  let assert Ok(config) = s3.config_from_env()
+
+  // まずファイルをアップロード
+  let content = "get_object test content"
+  let assert Ok(Nil) =
+    s3.put_object(config, "test/get_test.txt", content, "text/plain")
+
+  // 取得して内容を確認
+  let result = s3.get_object(config, "test/get_test.txt")
+  assert result == Ok(content)
+}
+
+pub fn get_object_returns_not_found_for_missing_file_test() {
+  let assert Ok(config) = s3.config_from_env()
+
+  let result = s3.get_object(config, "test/nonexistent_file_12345.txt")
+  assert result == Error(s3.NotFoundError)
+}
