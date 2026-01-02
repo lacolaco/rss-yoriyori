@@ -22,8 +22,9 @@ pub fn load_reads_feeds_json_test() {
   case result {
     Ok(cfg) -> {
       // 正常に読み込めた場合
-      assert cfg.feed.title == "RSS Yoriyori"
+      assert cfg.feed.title == "rss-yoriyori.lacolaco.dev"
       assert cfg.feed.max_items == 100
+      assert cfg.feed.max_items_per_feed == 10
     }
     Error(msg) -> {
       // S3環境変数がない場合はここに来る

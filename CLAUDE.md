@@ -1,21 +1,43 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## 原則
 
-## Project Overview
+### t_wada style TDD
 
-rss_yoriyori is a Gleam library/application. Gleam is a type-safe functional programming language that compiles to Erlang and JavaScript.
+**このプロジェクトでは機能追加・変更時にt_wadaスタイルのTDDを必ず適用する。例外なし。**
 
-## Build Commands
+1. **RED**: 失敗するテストを先に書く（実装コードより先にテスト）
+2. **GREEN**: テストを通す最小限の実装（それ以上書かない）
+3. **REFACTOR**: テストが通る状態を維持しながらリファクタリング
+
+ユーザーが実装する場合:
+- Claudeはスキャフォールディング（ファイル特定、TODO(human)配置）のみ
+- テスト・実装コードはユーザーが書く
+- RED/GREEN/REFACTORの各フェーズはユーザーの報告を待つ
+- 「TDDでやりますか？」と聞かない（t_wada TDDは前提）
+
+### 作業前確認
+
+作業前に「何をどうするか」を宣言し、ユーザーの確認を得てから実行する。
+
+### 確認不要事項
+
+- TDDの適用（確認せず適用する）
+
+## プロジェクト概要
+
+rss_yoriyoriはGleamで書かれたRSSフィードアグリゲーター。GleamはErlangとJavaScriptにコンパイルされる型安全な関数型言語。
+
+## ビルドコマンド
 
 ```sh
-gleam build      # Compile the project
-gleam run        # Run the project
+make build      # コンパイル
+make up        # 実行
 make test        # テスト実行（必須：Docker Compose経由）
-gleam docs build # Generate documentation
+gleam docs build # ドキュメント生成
 ```
 
-## Testing
+## テスト
 
 **重要: テストは必ず `make test` で実行すること。`gleam test` は使わない。**
 
@@ -24,9 +46,9 @@ gleam docs build # Generate documentation
 - Docker Compose経由で実行することで、MinIOが自動起動する
 - `gleam test` では環境変数がなく、storage_testが失敗する
 
-Tests are located in `test/` and use the gleeunit testing framework. Test functions must end with `_test` suffix to be discovered and run.
+テストは`test/`ディレクトリに配置。gleeunitフレームワークを使用。テスト関数は`_test`サフィックスが必須。
 
-## Project Structure
+## プロジェクト構成
 
 ```
 ├── src/                  # ソースコード
@@ -49,182 +71,11 @@ Tests are located in `test/` and use the gleeunit testing framework. Test functi
 └── Dockerfile            # 本番ビルド
 ```
 
-## Gleam Language Notes
+## Gleam言語
 
-- Gleam uses `assert` for assertions in tests
-- String concatenation uses `<>`
-- All functions must have explicit return types
-- Pattern matching is the primary control flow mechanism
+詳細は [docs/gleam-tour.md](docs/gleam-tour.md) を参照。
 
-### 命名規則
-
-- 変数・関数: `snake_case`（例: `default_port`, `handle_request`）
-- 型: `PascalCase`（例: `Result`, `FeedItem`）
-- モジュール: `snake_case`（例: `gleam/int`, `router`）
-
-### let vs const
-
-- `const`: モジュールトップレベル、コンパイル時定数（リテラルのみ）
-- `let`: 関数内、実行時束縛（再代入不可、イミュータブル）
-
-### パイプ演算子 `|>`
-
-左辺の結果を右辺の関数の**第1引数**に渡す：
-
-```gleam
-// これは
-wisp.ok()
-|> wisp.set_header("content-type", "application/rss+xml")
-|> wisp.string_body(rss_xml)
-
-// これと同じ
-wisp.string_body(
-  wisp.set_header(wisp.ok(), "content-type", "application/rss+xml"),
-  rss_xml
-)
-```
-
-制約：
-- 右辺は必ず関数呼び出し（括弧必須）: `|> func()` ○ / `|> func` ✗
-- 第1引数の型が一致しないとコンパイルエラー
-- 引数0個の関数にはパイプできない
-
-### Result型のチェーン
-
-```gleam
-envoy.get("PORT")           // Result(String, Nil)
-|> result.try(int.parse)    // Ok → 変換、Error → 伝播
-|> result.unwrap(8080)      // デフォルト値で取り出し
-```
-
-- `result.try`: Okの場合のみ次の関数を適用（旧名: `result.then`は非推奨）
-- `result.unwrap`: デフォルト値付きで値を取り出す
-- `result.replace_error`: エラー型を変換
-
-### useキーワード（継続渡しの構文糖衣）
-
-`use`は「コールバック地獄」を解消する構文糖衣：
-
-```gleam
-// use なし（ネストが深くなる）
-result.try(envoy.get("S3_ENDPOINT"), fn(endpoint) {
-  result.try(envoy.get("S3_ACCESS_KEY"), fn(access_key) {
-    Ok(Config(endpoint, access_key))
-  })
-})
-
-// use あり（フラットに書ける）
-use endpoint <- result.try(envoy.get("S3_ENDPOINT"))
-use access_key <- result.try(envoy.get("S3_ACCESS_KEY"))
-Ok(Config(endpoint, access_key))
-```
-
-- `use x <- f(...)` は `f(..., fn(x) { 残りのコード })` と等価
-- Rustの`?`演算子やHaskellの`do`記法に相当
-
-### result.try vs result.map
-
-```gleam
-// result.map: 失敗しない変換処理
-result.map(Ok(5), fn(x) { x * 2 })  // Ok(10)
-
-// result.try: 失敗する可能性がある変換処理
-result.try(Ok(5), fn(x) { Ok(x * 2) })  // Ok(10)
-result.try(Ok(5), fn(x) { Error("oops") })  // Error("oops")
-```
-
-### let assert（リファータブル・パターンマッチ）
-
-パターンマッチが失敗したらクラッシュする構文：
-
-```gleam
-// 通常の let - 必ず成功するパターンのみ
-let x = 5  // OK
-let Ok(x) = result  // コンパイルエラー
-
-// let assert - 失敗したらクラッシュ
-let assert Ok(date) = birl.parse("2025-01-01T12:00:00Z")
-```
-
-テストで「この値は絶対Okのはず」という前提を表明するのに便利。
-
-### Option型と日時
-
-Gleam標準ライブラリに日時型はない。`birl`パッケージを使用：
-
-```gleam
-import birl
-import gleam/option.{type Option, Some, None}
-
-// 現在時刻
-let now = birl.now()
-
-// パース
-let assert Ok(time) = birl.parse("2025-01-01T12:00:00Z")
-
-// Option型
-let maybe_date: Option(birl.Time) = Some(now)
-let no_date: Option(birl.Time) = None
-```
-
-### カスタム型（代数的データ型）
-
-`type`で独自の型を定義。enumとstructの区別はない：
-
-```gleam
-// enum的（複数バリアント）
-pub type ParseError {
-  InvalidXml(String)
-  UnsupportedFormat(String)
-}
-
-// struct的（単一バリアント）
-pub type FeedItem {
-  FeedItem(
-    title: String,
-    link: String,
-    pub_date: Option(Time),
-  )
-}
-
-// 使用
-let item = FeedItem(title: "Hello", link: "https://...", pub_date: None)
-item.title  // "Hello"
-```
-
-### テストのコロケーション
-
-- gleeunitは`test/`ディレクトリのみ検索（ハードコード）
-- `src/`内のテストを使いたい場合は`test/`から再エクスポート、またはGlacierを使用
-
-### wispハンドラーのテスト
-
-`wisp/simulate`モジュールを使用：
-
-```gleam
-import gleam/http
-import wisp/simulate
-import router
-
-pub fn my_endpoint_test() {
-  // リクエスト作成
-  let request = simulate.request(http.Post, "/path")
-
-  // ハンドラー呼び出し
-  let response = router.handle_request(request)
-
-  // アサーション
-  assert response.status == 200
-  let body = simulate.read_body(response)
-  assert string.contains(body, "expected")
-}
-```
-
-- `simulate.request(method, path)`: テスト用リクエスト生成
-- `simulate.read_body(response)`: レスポンスボディを文字列で取得
-- `simulate.string_body(content)`: リクエストにボディを設定
-
-## Docker
+## Docker設定
 
 - mist HTTPサーバーはデフォルトで`127.0.0.1`にバインド
 - Docker対応には`mist.bind("0.0.0.0")`が必要
@@ -318,27 +169,12 @@ Docker Compose内でテスト実行することで、`minio:9000`で簡単にア
   "link": "https://example.com",
   "output_file": "feed.xml",
   "max_items": 100,
+  "max_items_per_feed": 10,
   "feeds": [
     "https://example.com/feed.xml"
   ]
 }
 ```
-
-### JSONデコーダー（ブロック式 + use）
-
-```gleam
-let decoder = {
-  use title <- decode.field("title", decode.string)
-  use max_items <- decode.field("max_items", decode.int)
-  decode.success(Config(title: title, max_items: max_items))
-}
-
-json.parse(content, decoder)
-```
-
-- `{ }` はブロック式（最後の式の値を返す）
-- `use`で継続渡しをフラットに書ける
-- `decode.success(value)`で最終値を返す
 
 ## HTTPエンドポイント
 
@@ -351,3 +187,4 @@ json.parse(content, decoder)
 - Cloud Run: `https://rss-yoriyori-hpos2m2qia-an.a.run.app`
 - カスタムドメイン: `https://rss-yoriyori.lacolaco.dev`
 - Scheduler: 毎時0分に `/aggregate` 実行
+

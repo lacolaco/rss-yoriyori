@@ -46,6 +46,12 @@ import gleam/option.{type Option}    // type キーワードで型を指定
 import gleam/option.{None, Some}     // コンストラクタをインポート
 ```
 
+### 命名規則
+
+- 変数・関数: `snake_case`（例: `default_port`, `handle_request`）
+- 型: `PascalCase`（例: `Result`, `FeedItem`）
+- モジュール: `snake_case`（例: `gleam/int`, `router`）
+
 ### const と let
 
 - `const`: モジュールトップレベルで使用。コンパイル時定数（リテラルのみ）
@@ -543,6 +549,40 @@ const rss_sample = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 ```sh
 make test  # Docker Compose経由で実行（MinIO統合テスト含む）
 ```
+
+### wispハンドラーのテスト
+
+`wisp/simulate`モジュールを使用：
+
+```gleam
+// test/router_test.gleam
+
+import gleam/http
+import wisp/simulate
+import router
+
+pub fn my_endpoint_test() {
+  // リクエスト作成
+  let request = simulate.request(http.Post, "/path")
+
+  // ハンドラー呼び出し
+  let response = router.handle_request(request)
+
+  // アサーション
+  assert response.status == 200
+  let body = simulate.read_body(response)
+  assert string.contains(body, "expected")
+}
+```
+
+- `simulate.request(method, path)`: テスト用リクエスト生成
+- `simulate.read_body(response)`: レスポンスボディを文字列で取得
+- `simulate.string_body(content)`: リクエストにボディを設定
+
+### テストのコロケーション
+
+- gleeunitは`test/`ディレクトリのみ検索（ハードコード）
+- `src/`内のテストを使いたい場合は`test/`から再エクスポート、またはGlacierを使用
 
 ---
 

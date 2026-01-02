@@ -20,6 +20,7 @@ pub type FeedConfig {
     link: String,
     output_file: String,
     max_items: Int,
+    max_items_per_feed: Int,
     feed_urls: List(String),
   )
 }
@@ -49,12 +50,14 @@ fn load_feed_config() -> Result(FeedConfig, String) {
     use link <- decode.field("link", decode.string)
     use output_file <- decode.field("output_file", decode.string)
     use max_items <- decode.field("max_items", decode.int)
+    use max_items_per_feed <- decode.field("max_items_per_feed", decode.int)
     use feed_urls <- decode.field("feeds", decode.list(decode.string))
     decode.success(FeedConfig(
       title: title,
       link: link,
       output_file: output_file,
       max_items: max_items,
+      max_items_per_feed: max_items_per_feed,
       feed_urls: feed_urls,
     ))
   }

@@ -1,7 +1,19 @@
 {
-  "title": "RSS Yoriyori",
-  "link": "https://rss-yoriyori.example.com",
+  "title": "rss-yoriyori.lacolaco.dev",
+  "link": "https://rss-yoriyori.lacolaco.dev/feed.xml",
   "output_file": "feed.xml",
   "max_items": 100,
-  "feeds": []
+  "max_items_per_feed": 10,
+  "feeds": [
+    "https://user.keio.ac.jp/~rhotta/helhub/helhub.xml",
+    "https://blog.angular.io/feed",
+    "https://blog.mgechev.com/feed",
+    "https://github.com/angular/angular/commits/main.atom",
+    "https://github.com/angular/angular-cli/commits/main.atom",
+    "https://github.com/angular/components/commits/main.atom",
+    "https://github.com/angular/angular/releases.atom",
+    "https://github.com/angular/angular-cli/releases.atom",
+    "https://cprss.s3.amazonaws.com/frontendfoc.us.xml",
+    "https://blog.lacolaco.net/index.xml"
+  ]
 }

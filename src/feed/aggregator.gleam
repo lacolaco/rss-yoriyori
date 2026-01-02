@@ -44,6 +44,7 @@ pub fn run(config: Config) -> Result(String, AggregateError) {
       feed_config.title,
       feed_config.link,
       feed_config.max_items,
+      feed_config.max_items_per_feed,
     )
 
   // RSS XMLを生成
@@ -129,10 +130,11 @@ pub fn merge_feeds(
   title: String,
   link: String,
   max_items: Int,
+  max_items_per_feed: Int,
 ) -> Feed {
   let items =
     feeds
-    |> list.flat_map(fn(feed) { feed.items })
+    |> list.flat_map(fn(feed) { feed.items |> list.take(max_items_per_feed) })
     |> sort_by_date_desc
     |> list.take(max_items)
 
