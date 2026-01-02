@@ -61,6 +61,12 @@ resource "google_project_iam_member" "github_actions_storage_admin" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
+resource "google_project_iam_member" "github_actions_storage_hmac_admin" {
+  project = var.project_id
+  role    = "roles/storage.hmacKeyAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
 resource "google_project_iam_member" "github_actions_artifact_registry" {
   project = var.project_id
   role    = "roles/artifactregistry.admin"
