@@ -186,5 +186,5 @@ Docker Compose内でテスト実行することで、`minio:9000`で簡単にア
 
 - Cloud Run: `https://rss-yoriyori-hpos2m2qia-an.a.run.app`
 - カスタムドメイン: `https://rss-yoriyori.lacolaco.dev`
-- Scheduler: 毎時0分に `/aggregate` 実行
+- Scheduler: 10分毎に `/aggregate` 実行
 

@@ -24,7 +24,7 @@ variable "image_tag" {
 variable "scheduler_cron" {
   description = "Cron schedule for feed aggregation (Cloud Scheduler)"
   type        = string
-  default     = "0 * * * *" # 毎時0分
+  default     = "*/10 * * * *" # 10分毎
 }
 
 variable "github_repo" {
