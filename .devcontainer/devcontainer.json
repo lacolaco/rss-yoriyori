@@ -30,5 +30,5 @@
   "forwardPorts": [
     8080
   ],
-  "postCreateCommand": "find /root/.claude -xtype l -delete 2>/dev/null || true; [ -f gleam.toml ] && gleam deps download || true; gh auth status || gh auth login --web"
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
 }
