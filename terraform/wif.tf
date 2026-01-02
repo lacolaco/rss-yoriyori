@@ -91,6 +91,12 @@ resource "google_project_iam_member" "github_actions_wif_admin" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
+resource "google_project_iam_member" "github_actions_project_iam_admin" {
+  project = var.project_id
+  role    = "roles/resourcemanager.projectIamAdmin"
+  member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
 output "wif_provider" {
   value       = google_iam_workload_identity_pool_provider.github.name
   description = "Workload Identity Provider for GitHub Actions (WIF_PROVIDER secret)"
