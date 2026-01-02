@@ -26,3 +26,9 @@ variable "scheduler_cron" {
   type        = string
   default     = "0 * * * *" # 毎時0分
 }
+
+variable "github_repo" {
+  description = "GitHub repository (owner/repo)"
+  type        = string
+  default     = "lacolaco/rss-yoriyori"
+}
