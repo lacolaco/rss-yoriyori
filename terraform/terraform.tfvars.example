@@ -1,0 +1,6 @@
+# Copy this file to terraform.tfvars and fill in your values
+# cp terraform.tfvars.example terraform.tfvars
+
+project_id   = "your-gcp-project-id"
+region       = "asia-northeast1"
+service_name = "rss-yoriyori"

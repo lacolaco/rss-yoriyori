@@ -1,0 +1,7 @@
+{
+  "title": "RSS Yoriyori",
+  "link": "https://rss-yoriyori.example.com",
+  "output_file": "feed.xml",
+  "max_items": 100,
+  "feeds": []
+}
