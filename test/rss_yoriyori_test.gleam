@@ -20,7 +20,7 @@ fn test_config() -> config.Config {
       max_items: 100,
       max_items_per_feed: 10,
       max_age_days: 14,
-      feed_urls: [],
+      feed_sources: [],
     ),
     storage: s3.StorageConfig(
       endpoint: "localhost:9000",
@@ -107,7 +107,7 @@ pub fn feed_xml_returns_content_when_file_exists_test() {
         max_items: 100,
         max_items_per_feed: 10,
         max_age_days: 14,
-        feed_urls: [],
+        feed_sources: [],
       ),
       storage: storage_config,
     )
@@ -143,7 +143,7 @@ pub fn feed_xml_returns_404_when_file_not_exists_test() {
         max_items: 100,
         max_items_per_feed: 10,
         max_age_days: 14,
-        feed_urls: [],
+        feed_sources: [],
       ),
       storage: storage_config,
     )
