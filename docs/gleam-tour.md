@@ -5,17 +5,18 @@
 ## 目次
 
 1. [基本構文](#基本構文)
-2. [カスタム型](#カスタム型)
-3. [パターンマッチング](#パターンマッチング)
-4. [Result型とエラー処理](#result型とエラー処理)
-5. [パイプ演算子](#パイプ演算子)
-6. [useキーワード](#useキーワード)
-7. [Option型](#option型)
-8. [リスト操作](#リスト操作)
-9. [テスト](#テスト)
-10. [レコード更新構文](#レコード更新構文)
-11. [パターンマッチでのガード](#パターンマッチでのガード)
-12. [再帰と文字列処理](#再帰と文字列処理)
+2. [タプル型](#タプル型)
+3. [カスタム型](#カスタム型)
+4. [パターンマッチング](#パターンマッチング)
+5. [Result型とエラー処理](#result型とエラー処理)
+6. [パイプ演算子](#パイプ演算子)
+7. [useキーワード](#useキーワード)
+8. [Option型](#option型)
+9. [リスト操作](#リスト操作)
+10. [テスト](#テスト)
+11. [レコード更新構文](#レコード更新構文)
+12. [パターンマッチでのガード](#パターンマッチでのガード)
+13. [再帰と文字列処理](#再帰と文字列処理)
 
 ---
 
@@ -109,6 +110,51 @@ pub fn handle_request(req: Request, config: Config) -> Response {  // 公開関�
 Error(FetchError("Invalid URL: " <> url))
 Error(FetchError("HTTP " <> string.inspect(status) <> ": " <> url))
 ```
+
+---
+
+## タプル型
+
+タプルは固定長で異なる型の値をまとめて扱う型です。`#(...)`構文で表現します。
+
+```gleam
+#(String, String)       // 2つのStringを持つタプル型
+#(String, Int, Bool)    // 3つの異なる型を持つタプル型
+
+#("hello", "world")     // 値の例
+#("name", 42, True)     // 値の例
+```
+
+### パターンマッチでアクセス
+
+タプルの要素はパターンマッチで分解して取り出します。
+
+```gleam
+let pair = #("key", "value")
+let #(first, second) = pair
+// first = "key", second = "value"
+```
+
+### 関数の戻り値での使用
+
+```gleam
+// src/feed/html.gleam より
+
+case string.pop_grapheme(input) {
+  Ok(#(char, rest)) -> ...  // char="a", rest="bc"
+  Error(_) -> ...
+}
+```
+
+`string.pop_grapheme`は`Result(#(String, String), Nil)`を返します。成功時は先頭文字と残りの文字列のタプルです。
+
+### タプル vs レコード vs リスト
+
+| 型 | 用途 |
+|----|------|
+| タプル `#(a, b)` | 少数の異なる型をまとめる（2-3要素） |
+| レコード `Foo(x: a, y: b)` | 名前付きフィールドで意味を明確に |
+| リスト `List(a)` | 同じ型の可変長コレクション |
 
 ---
 
@@ -711,6 +757,7 @@ envoy.get("S3_USE_SSL")
 | モジュール | `import gleam/result` |
 | 定数 | `const port = 8080` |
 | 変数束縛 | `let x = 5` |
+| タプル | `#(a, b)` / `let #(x, y) = pair` |
 | 関数定義 | `pub fn foo() -> Int { 42 }` |
 | カスタム型 | `pub type Error { NotFound, Timeout }` |
 | パターンマッチ | `case x { Ok(v) -> v, Error(_) -> 0 }` |
