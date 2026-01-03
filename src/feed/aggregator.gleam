@@ -2,7 +2,7 @@
 //
 // 複数のフィードを1つに統合し、ストレージにアップロード
 
-import config.{type Config}
+import config.{type Config, type FeedSource}
 import feed/date.{type Time}
 import feed/generator
 import feed/html
@@ -28,12 +28,14 @@ pub type AggregateError {
 pub fn run(config: Config) -> Result(String, AggregateError) {
   let feed_config = config.feed
 
-  // 各URLからフィードを取得・パース
+  // 各ソースからフィードを取得・パース
   let feeds =
-    feed_config.feed_urls
-    |> list.filter_map(fn(url) {
-      fetch_and_parse(url)
-      |> result.replace_error(Nil)
+    feed_config.feed_sources
+    |> list.filter_map(fn(source: FeedSource) {
+      case fetch_and_parse(source.url) {
+        Ok(feed) -> Ok(#(feed, source.prefix))
+        Error(_) -> Error(Nil)
+      }
     })
 
   // threshold_date を計算
@@ -130,7 +132,7 @@ fn storage_error_to_string(e: s3.StorageError) -> String {
 /// - 日付降順でソート
 /// - max_items件に制限
 pub fn merge_feeds(
-  feeds: List(Feed),
+  feeds: List(#(Feed, option.Option(String))),
   title: String,
   link: String,
   max_items: Int,
@@ -139,30 +141,63 @@ pub fn merge_feeds(
 ) -> Feed {
   let items =
     feeds
-    |> list.flat_map(fn(feed) {
-      feed.items
-      // threshold_date が指定されていれば古いアイテムを除外
-      // pub_date が None のアイテムも除外
-      |> list.filter(fn(item) {
-        case threshold_date {
-          Some(threshold) ->
-            case item.pub_date {
-              Some(pub_date) -> date.is_after(pub_date, threshold)
-              None -> False
-            }
-          None -> True
-        }
-      })
-      |> list.take(max_items_per_feed)
+    |> list.flat_map(fn(feed_with_prefix) {
+      let #(feed, prefix_config) = feed_with_prefix
+      process_feed_items(feed, prefix_config, threshold_date, max_items_per_feed)
     })
     |> sort_by_date_desc
     |> list.take(max_items)
-    |> list.map(fn(item) {
-      // タイトルからHTMLタグを除去
-      FeedItem(..item, title: html.strip_tags(item.title))
-    })
+    |> list.map(sanitize_title)
 
   Feed(title: title, link: link, description: None, items: items)
+}
+
+/// 1つのフィードのアイテムを処理
+/// - 日付でフィルタ
+/// - max_items_per_feed件に制限
+/// - prefixを適用
+fn process_feed_items(
+  feed: Feed,
+  prefix_config: option.Option(String),
+  threshold_date: option.Option(Time),
+  max_items_per_feed: Int,
+) -> List(FeedItem) {
+  feed.items
+  |> list.filter(fn(item) { is_recent(item, threshold_date) })
+  |> list.take(max_items_per_feed)
+  |> list.map(fn(item) {
+    FeedItem(..item, title: apply_prefix(item.title, feed.title, prefix_config))
+  })
+}
+
+/// アイテムが閾値より新しいか判定
+fn is_recent(item: FeedItem, threshold_date: option.Option(Time)) -> Bool {
+  case threshold_date {
+    None -> True
+    Some(threshold) ->
+      case item.pub_date {
+        Some(pub_date) -> date.is_after(pub_date, threshold)
+        None -> False
+      }
+  }
+}
+
+/// タイトルからHTMLタグを除去
+fn sanitize_title(item: FeedItem) -> FeedItem {
+  FeedItem(..item, title: html.strip_tags(item.title))
+}
+
+/// タイトルにprefixを適用
+fn apply_prefix(
+  item_title: String,
+  feed_title: String,
+  prefix_config: option.Option(String),
+) -> String {
+  case prefix_config {
+    None -> "[" <> feed_title <> "] " <> item_title
+    Some("") -> item_title
+    Some(custom) -> custom <> " " <> item_title
+  }
 }
 
 /// アイテムを日付降順でソート（新しいものが先）

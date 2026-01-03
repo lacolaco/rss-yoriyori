@@ -1,9 +1,9 @@
 // aggregator_test.gleam - フィード統合ロジックのテスト
 
 import feed/aggregator
-import feed/types.{Feed, FeedItem}
+import feed/types.{type Feed, Feed, FeedItem}
 import gleam/list
-import gleam/option.{None}
+import gleam/option.{None, Some}
 import gleam/string
 import test_helper.{feed, item, some_date}
 
@@ -20,6 +20,11 @@ pub fn merge_empty_feeds_test() {
   assert result.items == []
 }
 
+// 既存テスト用ヘルパー: prefixなしでフィードをラップ
+fn with_no_prefix(f: Feed) -> #(Feed, option.Option(String)) {
+  #(f, Some(""))
+}
+
 pub fn merge_single_feed_test() {
   let test_feed =
     feed(fn(f) {
@@ -28,7 +33,7 @@ pub fn merge_single_feed_test() {
 
   let result =
     aggregator.merge_feeds(
-      [test_feed],
+      [with_no_prefix(test_feed)],
       "Combined",
       "https://example.com",
       100,
@@ -70,7 +75,7 @@ pub fn merge_multiple_feeds_test() {
 
   let result =
     aggregator.merge_feeds(
-      [feed_a, feed_b],
+      [with_no_prefix(feed_a), with_no_prefix(feed_b)],
       "Combined",
       "https://example.com",
       100,
@@ -92,7 +97,7 @@ pub fn merge_feeds_limits_test() {
 
   let result =
     aggregator.merge_feeds(
-      [test_feed],
+      [with_no_prefix(test_feed)],
       "Combined",
       "https://example.com",
       5,
@@ -126,7 +131,7 @@ pub fn merge_feeds_sorts_by_date_desc_test() {
 
   let result =
     aggregator.merge_feeds(
-      [test_feed],
+      [with_no_prefix(test_feed)],
       "Combined",
       "https://example.com",
       100,
@@ -153,7 +158,7 @@ pub fn merge_feeds_strips_html_from_title_test() {
 
   let result =
     aggregator.merge_feeds(
-      [test_feed],
+      [with_no_prefix(test_feed)],
       "Combined",
       "https://example.com",
       100,
@@ -192,7 +197,7 @@ pub fn merge_feeds_filters_old_items_test() {
 
   let result =
     aggregator.merge_feeds(
-      [test_feed],
+      [with_no_prefix(test_feed)],
       "Combined",
       "https://example.com",
       100,
@@ -228,7 +233,7 @@ pub fn merge_feeds_keeps_all_when_no_max_age_test() {
 
   let result =
     aggregator.merge_feeds(
-      [test_feed],
+      [with_no_prefix(test_feed)],
       "Combined",
       "https://example.com",
       100,
@@ -256,7 +261,7 @@ pub fn merge_feeds_excludes_items_without_date_test() {
 
   let result =
     aggregator.merge_feeds(
-      [test_feed],
+      [with_no_prefix(test_feed)],
       "Combined",
       "https://example.com",
       100,
@@ -292,7 +297,7 @@ pub fn merge_feeds_limits_per_feed_test() {
 
   let result =
     aggregator.merge_feeds(
-      [feed1, feed2],
+      [with_no_prefix(feed1), with_no_prefix(feed2)],
       "Combined",
       "https://example.com",
       100,
@@ -306,4 +311,139 @@ pub fn merge_feeds_limits_per_feed_test() {
   assert second.title == "Feed1 Article 2"
   assert third.title == "Feed2 Article 1"
   assert fourth.title == "Feed2 Article 2"
+}
+
+// ----------------------------------------------------------------------------
+// prefix テスト
+// ----------------------------------------------------------------------------
+
+pub fn merge_feeds_prefix_none_uses_feed_title_test() {
+  // prefix=Noneのとき、フィードタイトルがprefixとして付く
+  let test_feed =
+    feed(fn(f) {
+      Feed(
+        ..f,
+        title: "My Blog",
+        items: [item(fn(i) { FeedItem(..i, title: "Article") })],
+      )
+    })
+
+  let result =
+    aggregator.merge_feeds(
+      [#(test_feed, None)],
+      "Combined",
+      "https://example.com",
+      100,
+      10,
+      None,
+    )
+
+  let assert [merged_item] = result.items
+  assert merged_item.title == "[My Blog] Article"
+}
+
+pub fn merge_feeds_prefix_empty_string_no_prefix_test() {
+  // prefix=Some("")のとき、prefixが付かない
+  let test_feed =
+    feed(fn(f) {
+      Feed(
+        ..f,
+        title: "My Blog",
+        items: [item(fn(i) { FeedItem(..i, title: "Article") })],
+      )
+    })
+
+  let result =
+    aggregator.merge_feeds(
+      [#(test_feed, Some(""))],
+      "Combined",
+      "https://example.com",
+      100,
+      10,
+      None,
+    )
+
+  let assert [merged_item] = result.items
+  assert merged_item.title == "Article"
+}
+
+pub fn merge_feeds_prefix_custom_value_test() {
+  // prefix=Some("[ng]")のとき、カスタムprefixが付く
+  let test_feed =
+    feed(fn(f) {
+      Feed(
+        ..f,
+        title: "My Blog",
+        items: [item(fn(i) { FeedItem(..i, title: "Article") })],
+      )
+    })
+
+  let result =
+    aggregator.merge_feeds(
+      [#(test_feed, Some("[ng]"))],
+      "Combined",
+      "https://example.com",
+      100,
+      10,
+      None,
+    )
+
+  let assert [merged_item] = result.items
+  assert merged_item.title == "[ng] Article"
+}
+
+pub fn merge_feeds_multiple_feeds_with_different_prefixes_test() {
+  // 複数フィードを統合したとき、各記事に出典元のprefix設定が反映される
+  let feed_a =
+    feed(fn(f) {
+      Feed(
+        ..f,
+        title: "Blog A",
+        items: [
+          item(fn(i) {
+            FeedItem(
+              ..i,
+              title: "Article A",
+              pub_date: some_date("2025-01-02T12:00:00Z"),
+            )
+          }),
+        ],
+      )
+    })
+  let feed_b =
+    feed(fn(f) {
+      Feed(
+        ..f,
+        title: "Blog B",
+        items: [
+          item(fn(i) {
+            FeedItem(
+              ..i,
+              title: "Article B",
+              pub_date: some_date("2025-01-01T12:00:00Z"),
+            )
+          }),
+        ],
+      )
+    })
+
+  let result =
+    aggregator.merge_feeds(
+      [
+        #(feed_a, None),
+        #(feed_b, Some("[custom]")),
+      ],
+      "Combined",
+      "https://example.com",
+      100,
+      10,
+      None,
+    )
+
+  assert list.length(result.items) == 2
+  let assert [first, second] = result.items
+  // feed_aはprefix=None → フィードタイトルがprefix
+  assert first.title == "[Blog A] Article A"
+  // feed_bはprefix=Some("[custom]") → カスタムprefix
+  assert second.title == "[custom] Article B"
 }
