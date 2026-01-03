@@ -1,6 +1,7 @@
 // config_test.gleam - 設定読み込みのテスト
 
 import config
+import gleam/json
 import gleam/option.{None, Some}
 import gleeunit
 
@@ -9,69 +10,51 @@ pub fn main() -> Nil {
 }
 
 // ----------------------------------------------------------------------------
-// config.load テスト
+// FeedSource デコーダーテスト
 // ----------------------------------------------------------------------------
 
-pub fn load_reads_feeds_json_test() {
-  // feeds.jsonが存在する場合、正常に読み込める
-  // （テスト実行時はプロジェクトルートにfeeds.jsonがある）
-  let result = config.load()
+pub fn feed_source_string_url_decodes_with_no_prefix_test() {
+  // 文字列URLの場合、prefix=Noneとして扱われる
+  let json_string = "\"https://example.com/feed.xml\""
 
-  // S3環境変数がないためエラーになるが、
-  // feeds.jsonのパースは成功しているはず
-  // → S3環境変数がある環境（Docker Compose）でのみ成功
-  case result {
-    Ok(cfg) -> {
-      // 正常に読み込めた場合
-      assert cfg.feed.title == "rss-yoriyori.lacolaco.dev"
-      assert cfg.feed.max_items == 100
-      assert cfg.feed.max_items_per_feed == 10
-      assert cfg.feed.max_age_days == 14
-    }
-    Error(msg) -> {
-      // S3環境変数がない場合はここに来る
-      assert msg == "S3_ENDPOINT is not set"
-    }
-  }
+  let result = json.parse(json_string, config.feed_source_decoder())
+
+  let assert Ok(source) = result
+  assert source.url == "https://example.com/feed.xml"
+  assert source.prefix == None
 }
 
-// ----------------------------------------------------------------------------
-// FeedSource テスト
-// ----------------------------------------------------------------------------
+pub fn feed_source_object_format_decodes_with_prefix_test() {
+  // オブジェクト形式でprefixが指定されている場合
+  let json_string =
+    "{\"url\": \"https://example.com/feed.xml\", \"prefix\": \"[Example]\"}"
 
-pub fn feed_source_string_url_has_no_prefix_test() {
-  // feeds.jsonで文字列URLを指定した場合、prefix=Noneとして扱われる
-  // feeds.jsonの1つ目は文字列URL
-  let result = config.load()
+  let result = json.parse(json_string, config.feed_source_decoder())
 
-  case result {
-    Ok(cfg) -> {
-      let assert [first, ..] = cfg.feed.feed_sources
-      assert first.url == "https://user.keio.ac.jp/~rhotta/helhub/helhub.xml"
-      assert first.prefix == None
-    }
-    Error(_) -> {
-      // S3環境変数がない場合はスキップ
-      Nil
-    }
-  }
+  let assert Ok(source) = result
+  assert source.url == "https://example.com/feed.xml"
+  assert source.prefix == Some("[Example]")
 }
 
-pub fn feed_source_object_format_has_prefix_test() {
-  // feeds.jsonでオブジェクト形式を指定した場合、prefix設定が適用される
-  // feeds.jsonの4つ目（0-indexed: 3）はオブジェクト形式
-  let result = config.load()
+pub fn feed_source_object_format_without_prefix_decodes_as_none_test() {
+  // オブジェクト形式でprefixがない場合、prefix=None
+  let json_string = "{\"url\": \"https://example.com/feed.xml\"}"
 
-  case result {
-    Ok(cfg) -> {
-      // オブジェクト形式のフィードを探す
-      let assert [_, _, _, fourth, ..] = cfg.feed.feed_sources
-      assert fourth.url == "https://github.com/angular/angular/commits/main.atom"
-      assert fourth.prefix == Some("[ng/commits]")
-    }
-    Error(_) -> {
-      // S3環境変数がない場合はスキップ
-      Nil
-    }
-  }
+  let result = json.parse(json_string, config.feed_source_decoder())
+
+  let assert Ok(source) = result
+  assert source.url == "https://example.com/feed.xml"
+  assert source.prefix == None
+}
+
+pub fn feed_source_object_format_with_empty_prefix_test() {
+  // オブジェクト形式でprefixが空文字列の場合
+  let json_string =
+    "{\"url\": \"https://example.com/feed.xml\", \"prefix\": \"\"}"
+
+  let result = json.parse(json_string, config.feed_source_decoder())
+
+  let assert Ok(source) = result
+  assert source.url == "https://example.com/feed.xml"
+  assert source.prefix == Some("")
 }

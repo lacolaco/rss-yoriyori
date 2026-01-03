@@ -75,6 +75,17 @@
 
 - TDDの適用（確認せず適用する）
 
+### コミット前チェック（必須）
+
+**コミット前に以下を必ず実行し、両方パスすることを確認する。省略禁止。**
+
+```sh
+make format-check  # フォーマット確認
+make test          # テスト実行
+```
+
+CIは `make format-check` と `make test` の両方を実行する。ローカルで片方しか確認しないと、CIで失敗する。
+
 ## プロジェクト概要
 
 rss_yoriyoriはGleamで書かれたRSSフィードアグリゲーター。GleamはErlangとJavaScriptにコンパイルされる型安全な関数型言語。

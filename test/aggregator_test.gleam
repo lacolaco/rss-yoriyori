@@ -321,11 +321,9 @@ pub fn merge_feeds_prefix_none_uses_feed_title_test() {
   // prefix=Noneのとき、フィードタイトルがprefixとして付く
   let test_feed =
     feed(fn(f) {
-      Feed(
-        ..f,
-        title: "My Blog",
-        items: [item(fn(i) { FeedItem(..i, title: "Article") })],
-      )
+      Feed(..f, title: "My Blog", items: [
+        item(fn(i) { FeedItem(..i, title: "Article") }),
+      ])
     })
 
   let result =
@@ -346,11 +344,9 @@ pub fn merge_feeds_prefix_empty_string_no_prefix_test() {
   // prefix=Some("")のとき、prefixが付かない
   let test_feed =
     feed(fn(f) {
-      Feed(
-        ..f,
-        title: "My Blog",
-        items: [item(fn(i) { FeedItem(..i, title: "Article") })],
-      )
+      Feed(..f, title: "My Blog", items: [
+        item(fn(i) { FeedItem(..i, title: "Article") }),
+      ])
     })
 
   let result =
@@ -371,11 +367,9 @@ pub fn merge_feeds_prefix_custom_value_test() {
   // prefix=Some("[ng]")のとき、カスタムprefixが付く
   let test_feed =
     feed(fn(f) {
-      Feed(
-        ..f,
-        title: "My Blog",
-        items: [item(fn(i) { FeedItem(..i, title: "Article") })],
-      )
+      Feed(..f, title: "My Blog", items: [
+        item(fn(i) { FeedItem(..i, title: "Article") }),
+      ])
     })
 
   let result =
@@ -396,35 +390,27 @@ pub fn merge_feeds_multiple_feeds_with_different_prefixes_test() {
   // 複数フィードを統合したとき、各記事に出典元のprefix設定が反映される
   let feed_a =
     feed(fn(f) {
-      Feed(
-        ..f,
-        title: "Blog A",
-        items: [
-          item(fn(i) {
-            FeedItem(
-              ..i,
-              title: "Article A",
-              pub_date: some_date("2025-01-02T12:00:00Z"),
-            )
-          }),
-        ],
-      )
+      Feed(..f, title: "Blog A", items: [
+        item(fn(i) {
+          FeedItem(
+            ..i,
+            title: "Article A",
+            pub_date: some_date("2025-01-02T12:00:00Z"),
+          )
+        }),
+      ])
     })
   let feed_b =
     feed(fn(f) {
-      Feed(
-        ..f,
-        title: "Blog B",
-        items: [
-          item(fn(i) {
-            FeedItem(
-              ..i,
-              title: "Article B",
-              pub_date: some_date("2025-01-01T12:00:00Z"),
-            )
-          }),
-        ],
-      )
+      Feed(..f, title: "Blog B", items: [
+        item(fn(i) {
+          FeedItem(
+            ..i,
+            title: "Article B",
+            pub_date: some_date("2025-01-01T12:00:00Z"),
+          )
+        }),
+      ])
     })
 
   let result =

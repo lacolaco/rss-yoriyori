@@ -59,7 +59,10 @@ fn load_feed_config() -> Result(FeedConfig, String) {
     use max_items <- decode.field("max_items", decode.int)
     use max_items_per_feed <- decode.field("max_items_per_feed", decode.int)
     use max_age_days <- decode.field("max_age_days", decode.int)
-    use feed_sources <- decode.field("feeds", decode.list(feed_source_decoder()))
+    use feed_sources <- decode.field(
+      "feeds",
+      decode.list(feed_source_decoder()),
+    )
     decode.success(FeedConfig(
       title: title,
       link: link,
@@ -76,7 +79,7 @@ fn load_feed_config() -> Result(FeedConfig, String) {
 }
 
 /// FeedSourceのデコーダー（文字列またはオブジェクト）
-fn feed_source_decoder() -> decode.Decoder(FeedSource) {
+pub fn feed_source_decoder() -> decode.Decoder(FeedSource) {
   // 文字列の場合: URLのみ、prefix=None
   let string_decoder =
     decode.string

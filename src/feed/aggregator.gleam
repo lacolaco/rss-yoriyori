@@ -143,7 +143,12 @@ pub fn merge_feeds(
     feeds
     |> list.flat_map(fn(feed_with_prefix) {
       let #(feed, prefix_config) = feed_with_prefix
-      process_feed_items(feed, prefix_config, threshold_date, max_items_per_feed)
+      process_feed_items(
+        feed,
+        prefix_config,
+        threshold_date,
+        max_items_per_feed,
+      )
     })
     |> sort_by_date_desc
     |> list.take(max_items)
