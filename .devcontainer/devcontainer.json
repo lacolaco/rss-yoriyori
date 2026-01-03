@@ -3,6 +3,7 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
+  "initializeCommand": "bash .devcontainer/init-host.sh",
   "features": {
     "ghcr.io/devcontainers/features/git:1": {},
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
@@ -10,7 +11,7 @@
   },
   "mounts": [
     "source=${localEnv:HOME}/.claude.json,target=/root/.claude.json,type=bind",
-    "source=${localEnv:HOME}/.claude,target=/root/.claude,type=bind",
+    "source=/tmp/.claude-resolved,target=/root/.claude,type=bind",
     "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,readonly",
     "source=${localEnv:HOME}/.config/gcloud,target=/root/.config/gcloud,type=bind",
     "source=rss-yoriyori-gh,target=/root/.config/gh,type=volume",
