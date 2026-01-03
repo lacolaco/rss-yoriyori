@@ -6,7 +6,7 @@
   "max_items_per_feed": 10,
   "max_age_days": 14,
   "feeds": [
-    { "url": "https://user.keio.ac.jp/~rhotta/helhub/helhub.xml", "prefix": "[Helhub]" },
+    { "url": "https://user.keio.ac.jp/~rhotta/helhub/helhub.xml", "prefix": "" },
     "https://blog.angular.io/feed",
     "https://blog.mgechev.com/feed",
     { "url": "https://github.com/angular/angular/commits/main.atom", "prefix": "[angular/angular]" },
