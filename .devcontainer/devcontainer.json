@@ -14,17 +14,19 @@
     "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,readonly",
     "source=${localEnv:HOME}/.config/gcloud,target=/root/.config/gcloud,type=bind",
     "source=rss-yoriyori-gh,target=/root/.config/gh,type=volume",
-    "source=rss-yoriyori-bashhistory,target=/commandhistory,type=volume"
+    "source=rss-yoriyori-zshhistory,target=/commandhistory,type=volume"
   ],
   "containerEnv": {
-    "HISTFILE": "/commandhistory/.bash_history"
+    "HISTFILE": "/commandhistory/.zsh_history",
+    "SHELL": "/bin/zsh"
   },
   "customizations": {
     "vscode": {
       "extensions": [
         "gleam.gleam",
         "hashicorp.terraform"
-      ]
+      ],
+      "settings": {}
     }
   },
   "postCreateCommand": "bash .devcontainer/post-create.sh"
