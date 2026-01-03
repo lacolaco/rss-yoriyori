@@ -5,8 +5,9 @@
 import config.{type Config}
 import feed/date
 import feed/generator
+import feed/html
 import feed/parser
-import feed/types.{type Feed, type FeedItem, Feed}
+import feed/types.{type Feed, type FeedItem, Feed, FeedItem}
 import gleam/http/request
 import gleam/httpc
 import gleam/list
@@ -134,7 +135,14 @@ pub fn merge_feeds(
 ) -> Feed {
   let items =
     feeds
-    |> list.flat_map(fn(feed) { feed.items |> list.take(max_items_per_feed) })
+    |> list.flat_map(fn(feed) {
+      feed.items
+      |> list.take(max_items_per_feed)
+      |> list.map(fn(item) {
+        // タイトルからHTMLタグを除去
+        FeedItem(..item, title: html.strip_tags(item.title))
+      })
+    })
     |> sort_by_date_desc
     |> list.take(max_items)
 
