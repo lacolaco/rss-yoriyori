@@ -31,7 +31,7 @@ fn serve_feed(config: Config) -> Response {
     Ok(content) ->
       wisp.ok()
       |> wisp.set_header("content-type", "application/xml; charset=utf-8")
-      |> wisp.set_header("cache-control", "public, max-age=300")
+      |> wisp.set_header("cache-control", "public, max-age=300, s-maxage=600")
       |> wisp.string_body(content)
     Error(s3.NotFoundError) -> wisp.not_found()
     Error(_) -> wisp.internal_server_error()
