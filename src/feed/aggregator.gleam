@@ -3,7 +3,7 @@
 // 複数のフィードを1つに統合し、ストレージにアップロード
 
 import config.{type Config}
-import feed/date
+import feed/date.{type Time}
 import feed/generator
 import feed/html
 import feed/parser
@@ -32,11 +32,13 @@ pub fn run(config: Config) -> Result(String, AggregateError) {
   let feeds =
     feed_config.feed_urls
     |> list.filter_map(fn(url) {
-      case fetch_and_parse(url) {
-        Ok(feed) -> Ok(feed)
-        Error(_) -> Error(Nil)
-      }
+      fetch_and_parse(url)
+      |> result.replace_error(Nil)
     })
+
+  // threshold_date を計算
+  let threshold_date =
+    date.threshold_from_max_age_days(feed_config.max_age_days)
 
   // フィードを統合
   let merged =
@@ -46,6 +48,7 @@ pub fn run(config: Config) -> Result(String, AggregateError) {
       feed_config.link,
       feed_config.max_items,
       feed_config.max_items_per_feed,
+      threshold_date,
     )
 
   // RSS XMLを生成
@@ -132,19 +135,32 @@ pub fn merge_feeds(
   link: String,
   max_items: Int,
   max_items_per_feed: Int,
+  threshold_date: option.Option(Time),
 ) -> Feed {
   let items =
     feeds
     |> list.flat_map(fn(feed) {
       feed.items
-      |> list.take(max_items_per_feed)
-      |> list.map(fn(item) {
-        // タイトルからHTMLタグを除去
-        FeedItem(..item, title: html.strip_tags(item.title))
+      // threshold_date が指定されていれば古いアイテムを除外
+      // pub_date が None のアイテムも除外
+      |> list.filter(fn(item) {
+        case threshold_date {
+          Some(threshold) ->
+            case item.pub_date {
+              Some(pub_date) -> date.is_after(pub_date, threshold)
+              None -> False
+            }
+          None -> True
+        }
       })
+      |> list.take(max_items_per_feed)
     })
     |> sort_by_date_desc
     |> list.take(max_items)
+    |> list.map(fn(item) {
+      // タイトルからHTMLタグを除去
+      FeedItem(..item, title: html.strip_tags(item.title))
+    })
 
   Feed(title: title, link: link, description: None, items: items)
 }

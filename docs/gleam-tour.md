@@ -17,6 +17,7 @@
 11. [レコード更新構文](#レコード更新構文)
 12. [パターンマッチでのガード](#パターンマッチでのガード)
 13. [再帰と文字列処理](#再帰と文字列処理)
+14. [高階関数によるビルダーパターン](#高階関数によるビルダーパターン)
 
 ---
 
@@ -722,6 +723,90 @@ fn strip_tags_loop(input: String, acc: String, in_tag: Bool) -> String {
 
 ---
 
+## 高階関数によるビルダーパターン
+
+テストなどでオブジェクトを作成する際、デフォルト値を持つファクトリ関数に変換関数を渡すパターンです。
+
+### 基本形
+
+```gleam
+// test/test_helper.gleam より
+
+/// デフォルトのFeedItemを変換関数で加工して返す
+pub fn item(f: fn(FeedItem) -> FeedItem) -> FeedItem {
+  let base =
+    FeedItem(
+      title: "Test Item",
+      link: "https://example.com/item",
+      description: None,
+      pub_date: None,
+    )
+  f(base)
+}
+
+/// デフォルトのFeedを変換関数で加工して返す
+pub fn feed(f: fn(Feed) -> Feed) -> Feed {
+  let base =
+    Feed(
+      title: "Test Feed",
+      link: "https://example.com",
+      description: None,
+      items: [],
+    )
+  f(base)
+}
+```
+
+### 使用例
+
+```gleam
+// test/aggregator_test.gleam より
+
+// デフォルトのまま使う
+item(fn(i) { i })
+
+// タイトルだけ上書き
+item(fn(i) { FeedItem(..i, title: "Custom Title") })
+
+// 複数フィールドを上書き
+item(fn(i) {
+  FeedItem(..i, title: "Article", pub_date: some_date("2025-01-01T12:00:00Z"))
+})
+
+// feedの中にitemを含める
+feed(fn(f) {
+  Feed(..f, items: [
+    item(fn(i) { FeedItem(..i, title: "Article 1") }),
+    item(fn(i) { FeedItem(..i, title: "Article 2") }),
+  ])
+})
+```
+
+### なぜこのパターンが有効か
+
+1. **柔軟性**: どのフィールドの組み合わせでも上書き可能
+2. **簡潔さ**: テストごとに必要なフィールドだけを指定
+3. **型安全**: レコード更新構文により存在しないフィールドはコンパイルエラー
+4. **合成可能**: ネストしたオブジェクトも自然に作成できる
+
+### 従来のアプローチとの比較
+
+```gleam
+// ❌ 複数のファクトリ関数が必要
+item_with_title(title)
+item_with_date(title, date)
+item_with_title_and_date(title, date)
+item_with_description(title, desc)
+// ... 組み合わせ爆発
+
+// ✅ 高階関数パターン - 1つの関数で全パターン対応
+item(fn(i) { FeedItem(..i, title: t) })
+item(fn(i) { FeedItem(..i, title: t, pub_date: d) })
+item(fn(i) { FeedItem(..i, title: t, description: desc) })
+```
+
+---
+
 ## 無名関数とクロージャ
 
 ### 無名関数
@@ -769,5 +854,6 @@ envoy.get("S3_USE_SSL")
 | レコード更新 | `Foo(..old, field: new_value)` |
 | ガード | `Ok(x) if x > 0 -> ...` |
 | 再帰 | 終了条件 + 再帰呼び出し |
+| ビルダーパターン | `item(fn(i) { Foo(..i, x: v) })` |
 
 より詳しい情報は [Gleam公式ドキュメント](https://gleam.run/documentation/) を参照してください。
