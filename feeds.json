@@ -4,6 +4,7 @@
   "output_file": "feed.xml",
   "max_items": 100,
   "max_items_per_feed": 10,
+  "max_age_days": 14,
   "feeds": [
     "https://user.keio.ac.jp/~rhotta/helhub/helhub.xml",
     "https://blog.angular.io/feed",
@@ -13,6 +14,7 @@
     "https://github.com/angular/components/commits/main.atom",
     "https://github.com/angular/angular/releases.atom",
     "https://github.com/angular/angular-cli/releases.atom",
+    "https://github.com/gleam-lang/gleam/releases.atom",
     "https://cprss.s3.amazonaws.com/frontendfoc.us.xml",
     "https://blog.lacolaco.net/index.xml"
   ]

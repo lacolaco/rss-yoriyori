@@ -1,11 +1,11 @@
 // aggregator_test.gleam - フィード統合ロジックのテスト
 
-import birl
 import feed/aggregator
 import feed/types.{Feed, FeedItem}
 import gleam/list
-import gleam/option.{None, Some}
+import gleam/option.{None}
 import gleam/string
+import test_helper.{feed, item, some_date}
 
 // ----------------------------------------------------------------------------
 // merge_feeds テスト
@@ -13,7 +13,7 @@ import gleam/string
 
 pub fn merge_empty_feeds_test() {
   let result =
-    aggregator.merge_feeds([], "Combined", "https://example.com", 100, 10)
+    aggregator.merge_feeds([], "Combined", "https://example.com", 100, 10, None)
 
   assert result.title == "Combined"
   assert result.link == "https://example.com"
@@ -21,24 +21,20 @@ pub fn merge_empty_feeds_test() {
 }
 
 pub fn merge_single_feed_test() {
-  let item =
-    FeedItem(
-      title: "Article 1",
-      link: "https://a.com/1",
-      description: Some("Description"),
-      pub_date: None,
-    )
-
-  let feed =
-    Feed(
-      title: "Feed A",
-      link: "https://a.com",
-      description: Some("Feed A desc"),
-      items: [item],
-    )
+  let test_feed =
+    feed(fn(f) {
+      Feed(..f, items: [item(fn(i) { FeedItem(..i, title: "Article 1") })])
+    })
 
   let result =
-    aggregator.merge_feeds([feed], "Combined", "https://example.com", 100, 10)
+    aggregator.merge_feeds(
+      [test_feed],
+      "Combined",
+      "https://example.com",
+      100,
+      10,
+      None,
+    )
 
   assert result.title == "Combined"
   assert list.length(result.items) == 1
@@ -47,34 +43,30 @@ pub fn merge_single_feed_test() {
 }
 
 pub fn merge_multiple_feeds_test() {
-  let assert Ok(date1) = birl.parse("2025-01-01T12:00:00Z")
-  let assert Ok(date2) = birl.parse("2025-01-02T12:00:00Z")
-
-  let item_a =
-    FeedItem(
-      title: "Old Article",
-      link: "https://a.com/old",
-      description: None,
-      pub_date: Some(date1),
-    )
-
-  let item_b =
-    FeedItem(
-      title: "New Article",
-      link: "https://b.com/new",
-      description: None,
-      pub_date: Some(date2),
-    )
-
   let feed_a =
-    Feed(title: "Feed A", link: "https://a.com", description: None, items: [
-      item_a,
-    ])
-
+    feed(fn(f) {
+      Feed(..f, items: [
+        item(fn(i) {
+          FeedItem(
+            ..i,
+            title: "Old Article",
+            pub_date: some_date("2025-01-01T12:00:00Z"),
+          )
+        }),
+      ])
+    })
   let feed_b =
-    Feed(title: "Feed B", link: "https://b.com", description: None, items: [
-      item_b,
-    ])
+    feed(fn(f) {
+      Feed(..f, items: [
+        item(fn(i) {
+          FeedItem(
+            ..i,
+            title: "New Article",
+            pub_date: some_date("2025-01-02T12:00:00Z"),
+          )
+        }),
+      ])
+    })
 
   let result =
     aggregator.merge_feeds(
@@ -83,70 +75,66 @@ pub fn merge_multiple_feeds_test() {
       "https://example.com",
       100,
       10,
+      None,
     )
 
   assert list.length(result.items) == 2
 }
 
 pub fn merge_feeds_limits_test() {
-  // 150件のアイテムを持つフィードを作成
   let items =
     list.range(1, 150)
-    |> list.map(fn(i) {
-      FeedItem(
-        title: "Article " <> string.inspect(i),
-        link: "https://a.com/" <> string.inspect(i),
-        description: None,
-        pub_date: None,
-      )
+    |> list.map(fn(n) {
+      item(fn(i) { FeedItem(..i, title: "Article " <> string.inspect(n)) })
     })
 
-  let feed =
-    Feed(
-      title: "Big Feed",
-      link: "https://a.com",
-      description: None,
-      items: items,
-    )
+  let test_feed = feed(fn(f) { Feed(..f, items: items) })
 
   let result =
-    aggregator.merge_feeds([feed], "Combined", "https://example.com", 5, 10)
+    aggregator.merge_feeds(
+      [test_feed],
+      "Combined",
+      "https://example.com",
+      5,
+      10,
+      None,
+    )
 
   assert list.length(result.items) == 5
 }
 
 pub fn merge_feeds_sorts_by_date_desc_test() {
-  let assert Ok(old_date) = birl.parse("2025-01-01T12:00:00Z")
-  let assert Ok(new_date) = birl.parse("2025-01-15T12:00:00Z")
-
-  let old_item =
-    FeedItem(
-      title: "Old",
-      link: "https://a.com/old",
-      description: None,
-      pub_date: Some(old_date),
-    )
-
-  let new_item =
-    FeedItem(
-      title: "New",
-      link: "https://b.com/new",
-      description: None,
-      pub_date: Some(new_date),
-    )
-
-  // 古い順で渡す
-  let feed =
-    Feed(title: "Feed", link: "https://a.com", description: None, items: [
-      old_item,
-      new_item,
-    ])
+  let test_feed =
+    feed(fn(f) {
+      Feed(..f, items: [
+        item(fn(i) {
+          FeedItem(
+            ..i,
+            title: "Old",
+            pub_date: some_date("2025-01-01T12:00:00Z"),
+          )
+        }),
+        item(fn(i) {
+          FeedItem(
+            ..i,
+            title: "New",
+            pub_date: some_date("2025-01-15T12:00:00Z"),
+          )
+        }),
+      ])
+    })
 
   let result =
-    aggregator.merge_feeds([feed], "Combined", "https://example.com", 100, 10)
+    aggregator.merge_feeds(
+      [test_feed],
+      "Combined",
+      "https://example.com",
+      100,
+      10,
+      None,
+    )
 
   let assert [first, second] = result.items
-  // 新しい記事が先に来るはず
   assert first.title == "New"
   assert second.title == "Old"
 }
@@ -156,24 +144,129 @@ pub fn merge_feeds_sorts_by_date_desc_test() {
 // ----------------------------------------------------------------------------
 
 pub fn merge_feeds_strips_html_from_title_test() {
-  let item =
-    FeedItem(
-      title: "<b>Bold Title</b>",
-      link: "https://a.com/bold",
-      description: None,
-      pub_date: None,
-    )
-  let feed =
-    Feed(
-      title: "Feed with HTML Title",
-      link: "https://a.com",
-      description: None,
-      items: [item],
-    )
+  let test_feed =
+    feed(fn(f) {
+      Feed(..f, items: [
+        item(fn(i) { FeedItem(..i, title: "<b>Bold Title</b>") }),
+      ])
+    })
+
   let result =
-    aggregator.merge_feeds([feed], "Combined", "https://example.com", 100, 10)
+    aggregator.merge_feeds(
+      [test_feed],
+      "Combined",
+      "https://example.com",
+      100,
+      10,
+      None,
+    )
+
   let assert [merged_item] = result.items
   assert merged_item.title == "Bold Title"
+}
+
+// ----------------------------------------------------------------------------
+// max_age_days テスト
+// ----------------------------------------------------------------------------
+
+pub fn merge_feeds_filters_old_items_test() {
+  let test_feed =
+    feed(fn(f) {
+      Feed(..f, items: [
+        item(fn(i) {
+          FeedItem(
+            ..i,
+            title: "Recent",
+            pub_date: some_date("2025-01-25T12:00:00Z"),
+          )
+        }),
+        item(fn(i) {
+          FeedItem(
+            ..i,
+            title: "Old",
+            pub_date: some_date("2024-12-26T12:00:00Z"),
+          )
+        }),
+      ])
+    })
+
+  let result =
+    aggregator.merge_feeds(
+      [test_feed],
+      "Combined",
+      "https://example.com",
+      100,
+      10,
+      some_date("2025-01-15T12:00:00Z"),
+    )
+
+  assert list.length(result.items) == 1
+  let assert [only_item] = result.items
+  assert only_item.title == "Recent"
+}
+
+pub fn merge_feeds_keeps_all_when_no_max_age_test() {
+  let test_feed =
+    feed(fn(f) {
+      Feed(..f, items: [
+        item(fn(i) {
+          FeedItem(
+            ..i,
+            title: "Article 1",
+            pub_date: some_date("2025-01-01T12:00:00Z"),
+          )
+        }),
+        item(fn(i) {
+          FeedItem(
+            ..i,
+            title: "Article 2",
+            pub_date: some_date("2024-01-01T12:00:00Z"),
+          )
+        }),
+      ])
+    })
+
+  let result =
+    aggregator.merge_feeds(
+      [test_feed],
+      "Combined",
+      "https://example.com",
+      100,
+      10,
+      None,
+    )
+
+  assert list.length(result.items) == 2
+}
+
+pub fn merge_feeds_excludes_items_without_date_test() {
+  let test_feed =
+    feed(fn(f) {
+      Feed(..f, items: [
+        item(fn(i) {
+          FeedItem(
+            ..i,
+            title: "Recent",
+            pub_date: some_date("2025-01-20T12:00:00Z"),
+          )
+        }),
+        item(fn(i) { FeedItem(..i, title: "No Date") }),
+      ])
+    })
+
+  let result =
+    aggregator.merge_feeds(
+      [test_feed],
+      "Combined",
+      "https://example.com",
+      100,
+      10,
+      some_date("2025-01-15T12:00:00Z"),
+    )
+
+  assert list.length(result.items) == 1
+  let assert [only_item] = result.items
+  assert only_item.title == "Recent"
 }
 
 // ----------------------------------------------------------------------------
@@ -181,40 +274,22 @@ pub fn merge_feeds_strips_html_from_title_test() {
 // ----------------------------------------------------------------------------
 
 pub fn merge_feeds_limits_per_feed_test() {
-  // TODO(human): 各フィードから最大N件取得することを検証するテストを書く
-  // - 2つのフィードを作成（各5件のアイテム）
-  // - max_items_per_feed=2 で merge_feeds を呼ぶ
-  // - 結果が4件（2件 x 2フィード）であることを検証
+  let make_items = fn(prefix: String) {
+    list.range(1, 6)
+    |> list.map(fn(n) {
+      item(fn(i) { FeedItem(..i, title: prefix <> string.inspect(n)) })
+    })
+  }
+
   let feed1 =
-    Feed(
-      title: "Feed 1",
-      link: "https://feed1.com",
-      description: None,
-      items: list.range(1, 6)
-        |> list.map(fn(i) {
-          FeedItem(
-            title: "Feed1 Article " <> string.inspect(i),
-            link: "https://feed1.com/" <> string.inspect(i),
-            description: None,
-            pub_date: None,
-          )
-        }),
-    )
+    feed(fn(f) {
+      Feed(..f, title: "Feed 1", items: make_items("Feed1 Article "))
+    })
   let feed2 =
-    Feed(
-      title: "Feed 2",
-      link: "https://feed2.com",
-      description: None,
-      items: list.range(1, 6)
-        |> list.map(fn(i) {
-          FeedItem(
-            title: "Feed2 Article " <> string.inspect(i),
-            link: "https://feed2.com/" <> string.inspect(i),
-            description: None,
-            pub_date: None,
-          )
-        }),
-    )
+    feed(fn(f) {
+      Feed(..f, title: "Feed 2", items: make_items("Feed2 Article "))
+    })
+
   let result =
     aggregator.merge_feeds(
       [feed1, feed2],
@@ -222,6 +297,7 @@ pub fn merge_feeds_limits_per_feed_test() {
       "https://example.com",
       100,
       2,
+      None,
     )
 
   assert list.length(result.items) == 4
@@ -230,5 +306,4 @@ pub fn merge_feeds_limits_per_feed_test() {
   assert second.title == "Feed1 Article 2"
   assert third.title == "Feed2 Article 1"
   assert fourth.title == "Feed2 Article 2"
-  Nil
 }
