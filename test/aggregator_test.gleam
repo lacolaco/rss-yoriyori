@@ -152,6 +152,31 @@ pub fn merge_feeds_sorts_by_date_desc_test() {
 }
 
 // ----------------------------------------------------------------------------
+// merge_feeds でのタイトルサニタイズ テスト
+// ----------------------------------------------------------------------------
+
+pub fn merge_feeds_strips_html_from_title_test() {
+  let item =
+    FeedItem(
+      title: "<b>Bold Title</b>",
+      link: "https://a.com/bold",
+      description: None,
+      pub_date: None,
+    )
+  let feed =
+    Feed(
+      title: "Feed with HTML Title",
+      link: "https://a.com",
+      description: None,
+      items: [item],
+    )
+  let result =
+    aggregator.merge_feeds([feed], "Combined", "https://example.com", 100, 10)
+  let assert [merged_item] = result.items
+  assert merged_item.title == "Bold Title"
+}
+
+// ----------------------------------------------------------------------------
 // max_items_per_feed テスト
 // ----------------------------------------------------------------------------
 

@@ -13,6 +13,9 @@
 7. [Option型](#option型)
 8. [リスト操作](#リスト操作)
 9. [テスト](#テスト)
+10. [レコード更新構文](#レコード更新構文)
+11. [パターンマッチでのガード](#パターンマッチでのガード)
+12. [再帰と文字列処理](#再帰と文字列処理)
 
 ---
 
@@ -586,6 +589,93 @@ pub fn my_endpoint_test() {
 
 ---
 
+## レコード更新構文
+
+既存のレコードから一部のフィールドだけを変更した新しいレコードを作成できます。
+
+```gleam
+// src/feed/aggregator.gleam より
+
+// タイトルだけを変更した新しいFeedItemを作成
+FeedItem(..item, title: strip_html_tags(item.title))
+
+// これは以下と同じ（冗長）
+FeedItem(
+  title: strip_html_tags(item.title),
+  link: item.link,
+  description: item.description,
+  pub_date: item.pub_date,
+)
+```
+
+`..item` で元のレコードの全フィールドをコピーし、その後に指定したフィールドだけを上書きします。
+
+---
+
+## パターンマッチでのガード
+
+`case`式でパターンに加えて条件（ガード）を指定できます。
+
+```gleam
+// src/feed/html.gleam より
+
+fn strip_tags_loop(input: String, acc: String, in_tag: Bool) -> String {
+  case string.pop_grapheme(input) {
+    Error(_) -> acc
+    Ok(#("<", rest)) -> strip_tags_loop(rest, acc, True)
+    Ok(#(">", rest)) -> strip_tags_loop(rest, acc, False)
+    Ok(#(_, rest)) if in_tag -> strip_tags_loop(rest, acc, True)  // ガード
+    Ok(#(char, rest)) -> strip_tags_loop(rest, acc <> char, False)
+  }
+}
+```
+
+`if in_tag` がガードです。パターンがマッチし、かつガードが`True`の場合のみそのブランチが実行されます。
+
+---
+
+## 再帰と文字列処理
+
+Gleamにはループ構文がないため、繰り返し処理は再帰で実装します。
+
+### string.pop_grapheme
+
+文字列から先頭の1文字を取り出します。
+
+```gleam
+string.pop_grapheme("hello")  // Ok(#("h", "ello"))
+string.pop_grapheme("")       // Error(Nil)
+```
+
+### 再帰ループの例
+
+HTMLタグを除去する処理：
+
+```gleam
+// src/feed/html.gleam より
+
+pub fn strip_tags(html: String) -> String {
+  strip_tags_loop(html, "", False)
+}
+
+fn strip_tags_loop(input: String, acc: String, in_tag: Bool) -> String {
+  case string.pop_grapheme(input) {
+    Error(_) -> acc                                              // 終了条件
+    Ok(#("<", rest)) -> strip_tags_loop(rest, acc, True)         // タグ開始
+    Ok(#(">", rest)) -> strip_tags_loop(rest, acc, False)        // タグ終了
+    Ok(#(_, rest)) if in_tag -> strip_tags_loop(rest, acc, True) // タグ内をスキップ
+    Ok(#(char, rest)) -> strip_tags_loop(rest, acc <> char, False) // テキストを蓄積
+  }
+}
+```
+
+パターン:
+- `acc`: アキュムレータ（結果を蓄積）
+- `in_tag`: 状態を表すフラグ
+- 終了条件で`acc`を返す
+
+---
+
 ## 無名関数とクロージャ
 
 ### 無名関数
@@ -629,5 +719,8 @@ envoy.get("S3_USE_SSL")
 | Option | `Some(value)` / `None` |
 | Result | `Ok(value)` / `Error(reason)` |
 | let assert | `let assert Ok(x) = maybe_ok` |
+| レコード更新 | `Foo(..old, field: new_value)` |
+| ガード | `Ok(x) if x > 0 -> ...` |
+| 再帰 | 終了条件 + 再帰呼び出し |
 
 より詳しい情報は [Gleam公式ドキュメント](https://gleam.run/documentation/) を参照してください。
