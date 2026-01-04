@@ -18,6 +18,7 @@
 12. [パターンマッチでのガード](#パターンマッチでのガード)
 13. [再帰と文字列処理](#再帰と文字列処理)
 14. [高階関数によるビルダーパターン](#高階関数によるビルダーパターン)
+15. [プラットフォーム固有の機能](#プラットフォーム固有の機能)
 
 ---
 
@@ -832,6 +833,68 @@ feeds
 envoy.get("S3_USE_SSL")
 |> result.map(fn(val) { string.lowercase(val) == "true" })
 ```
+
+---
+
+## プラットフォーム固有の機能
+
+### Gleam標準ライブラリの設計方針
+
+GleamはErlang VMとJavaScriptの両方にコンパイルされる。そのため、標準ライブラリ（`gleam_stdlib`）には**両ターゲットで動作する機能のみ**含まれる。
+
+**標準ライブラリに含まれないもの:**
+- ファイルI/O
+- ネットワーク
+- プロセス管理
+- 時刻取得
+
+これらはプラットフォーム固有のライブラリで提供される：
+
+| 機能 | ライブラリ | 対象 |
+|------|-----------|------|
+| ファイルI/O | `simplifile` | Erlang |
+| プロセス・Actor | `gleam_erlang` | Erlang |
+| HTTPクライアント | `gleam_httpc` | Erlang |
+| Promise | `gleam_javascript` | JavaScript |
+
+### ファイル読み込み（simplifile）
+
+このプロジェクトでは`feeds.json`の読み込みに使用：
+
+```gleam
+// src/config.gleam より
+
+import simplifile
+
+const feeds_file = "feeds.json"
+
+fn load_feed_config() -> Result(FeedConfig, String) {
+  use content <- result.try(
+    simplifile.read(feeds_file)
+    |> result.replace_error("Failed to read " <> feeds_file),
+  )
+  // JSONパース処理...
+}
+```
+
+主な関数：
+
+```gleam
+// ファイル読み込み
+simplifile.read("path/to/file")  // -> Result(String, FileError)
+
+// ファイル書き込み
+simplifile.write("path/to/file", content)  // -> Result(Nil, FileError)
+
+// ファイル存在確認
+simplifile.is_file("path/to/file")  // -> Result(Bool, FileError)
+```
+
+### なぜ標準ライブラリに含めないのか
+
+1. **クロスプラットフォーム互換性**: ErlangとJavaScriptでAPIが全く異なる
+2. **依存の明確化**: 使用するプラットフォームを`gleam.toml`で明示
+3. **軽量な標準ライブラリ**: 必要なものだけを依存に追加
 
 ---
 
