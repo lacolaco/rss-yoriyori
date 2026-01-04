@@ -3,11 +3,6 @@
 import config
 import gleam/json
 import gleam/option.{None, Some}
-import gleeunit
-
-pub fn main() -> Nil {
-  gleeunit.main()
-}
 
 // ----------------------------------------------------------------------------
 // FeedSource デコーダーテスト

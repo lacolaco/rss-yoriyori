@@ -1,4 +1,4 @@
-.PHONY: up down logs test format format-check build deploy init plan apply
+.PHONY: up down logs test watch format format-check build deploy init plan apply
 
 PROJECT_ID := rss-yoriyori
 TAG := $(shell git rev-parse --short HEAD)
@@ -14,7 +14,10 @@ logs:
 	docker compose logs -f
 
 test:
-	docker compose run --rm --build test
+	docker compose run --rm --build test sh -c "gleam clean && gleam test"
+
+watch:
+	docker compose run --rm --build test sh -c "gleam clean && gleam test -- --glacier"
 
 format:
 	gleam format src test

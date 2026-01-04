@@ -1,7 +1,7 @@
 FROM ghcr.io/gleam-lang/gleam:v1.13.0-erlang
 
 # Claude Code + Terraform + gcloud CLI
-RUN apt-get update && apt-get install -y nodejs npm curl gnupg unzip zsh \
+RUN apt-get update && apt-get install -y nodejs npm curl gnupg unzip zsh inotify-tools \
     && npm install -g @anthropic-ai/claude-code \
     # Terraform
     && curl -fsSL https://releases.hashicorp.com/terraform/1.9.8/terraform_1.9.8_linux_amd64.zip -o /tmp/terraform.zip \

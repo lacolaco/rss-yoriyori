@@ -1,6 +1,8 @@
 # テスト実行用 Dockerfile
 FROM ghcr.io/gleam-lang/gleam:v1.13.0-erlang-alpine
 
+RUN apk add --no-cache inotify-tools
+
 WORKDIR /app
 
 # 依存関係ファイルをコピー
@@ -9,11 +11,7 @@ COPY gleam.toml manifest.toml ./
 # 依存関係をダウンロード
 RUN gleam deps download
 
-# ソースとテストをコピー
-COPY src/ src/
-COPY test/ test/
+# Note: src/, test/, feeds.json は docker-compose.yaml でボリュームマウントされる
 
-# フィード設定ファイルをコピー
-COPY feeds.json ./
-
-ENTRYPOINT ["gleam", "test"]
+ENTRYPOINT []
+CMD ["gleam", "test"]
