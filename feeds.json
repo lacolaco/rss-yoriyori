@@ -4,7 +4,7 @@
   "output_file": "feed.xml",
   "max_items": 100,
   "max_items_per_feed": 10,
-  "max_age_days": 14,
+  "max_age_days": 7,
   "feeds": [
     { "url": "https://user.keio.ac.jp/~rhotta/helhub/helhub.xml", "prefix": "" },
     "https://blog.angular.io/feed",
