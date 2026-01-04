@@ -1,13 +1,13 @@
 import config
+import glacier
 import gleam/http
 import gleam/string
-import gleeunit
 import router
 import storage/s3
 import wisp/simulate
 
 pub fn main() -> Nil {
-  gleeunit.main()
+  glacier.main()
 }
 
 /// テスト用の設定を作成

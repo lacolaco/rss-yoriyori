@@ -1,0 +1,17 @@
+#!/bin/sh
+# pre-commit hook: Enforce code quality checks before commit
+set -e
+
+echo "🔍 Running format check..."
+if ! make format-check; then
+  echo "❌ Format check failed. Run 'gleam format' to fix."
+  exit 1
+fi
+
+echo "🧪 Running tests..."
+if ! make test; then
+  echo "❌ Tests failed. Fix the tests before committing."
+  exit 1
+fi
+
+echo "✅ All checks passed. Proceeding with commit."
