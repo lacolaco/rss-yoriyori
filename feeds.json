@@ -3,7 +3,7 @@
   "link": "https://rss-yoriyori.lacolaco.dev/feed.xml",
   "output_file": "feed.xml",
   "max_items": 100,
-  "max_items_per_feed": 10,
+  "max_items_per_feed": 5,
   "max_age_days": 7,
   "feeds": [
     { "url": "https://user.keio.ac.jp/~rhotta/helhub/helhub.xml", "prefix": "" },
