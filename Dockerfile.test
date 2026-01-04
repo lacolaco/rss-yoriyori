@@ -11,12 +11,7 @@ COPY gleam.toml manifest.toml ./
 # 依存関係をダウンロード
 RUN gleam deps download
 
-# ソースとテストをコピー
-COPY src/ src/
-COPY test/ test/
-
-# フィード設定ファイルをコピー
-COPY feeds.json ./
+# Note: src/, test/, feeds.json は docker-compose.yaml でボリュームマウントされる
 
 ENTRYPOINT []
 CMD ["gleam", "test"]
